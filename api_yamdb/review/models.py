@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -86,10 +87,7 @@ class Reviews(models.Model):
         verbose_name='автор отзыва'
     )
     score = models.IntegerField(
-        validators=[
-            models.MinValueValidator(1),
-            models.MaxValueValidator(10)
-        ]
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -114,7 +112,7 @@ class Comments(models.Model):
         on_delete=models.CASCADE,
         related_name='comments'
     )
-    text = models.TextField(erbose_name='текст комментария')
+    text = models.TextField(verbose_name='текст комментария')
     pub_date = models.DateTimeField(
         'Дата добавления',
         auto_now_add=True,
