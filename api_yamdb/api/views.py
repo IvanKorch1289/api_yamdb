@@ -15,7 +15,6 @@ from api.serializers import (CategoriesSerializer, GenresSerializer,
                              CommentsSerializer)
 
 
-
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
