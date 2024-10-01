@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser
 ROLE_CHOICES = (
     ('user', 'Пользователь'), ('moderator', 'Модератор'), ('admin', 'Админ')
 )
-
+SHORT_TITLE = 25
 # User = get_user_model()
 
 
@@ -94,6 +94,9 @@ class Titles(models.Model):
         help_text='Рейтинг на основе оценок пользователей',
         verbose_name='рейтинг',
     )
+    # нужно создать таблицу вручную, и для нее сделать сериализатор,
+    # выбрасывается исключение TypeError: 'Genres' object is not iterable,
+    # при попытке добваить категорию.
     genre = models.ManyToManyField(
         Genres,
         db_table='title_genre_link',
@@ -136,6 +139,9 @@ class Reviews(models.Model):
         verbose_name = 'Отзыв'
         verbose_name = 'Отзывы'
 
+    def __str__(self):
+        return self.text[:SHORT_TITLE]
+
 
 class Comments(models.Model):
     author = models.ForeignKey(
@@ -158,6 +164,9 @@ class Comments(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name = 'Комментарии'
+
+    def __str__(self):
+        return self.text[:SHORT_TITLE]
 
 
 # class MyUser(AbstractUser):
