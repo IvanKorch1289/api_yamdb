@@ -24,4 +24,7 @@ router.register(
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include('djoser.urls')),
+    path('', include('djoser.urls.jwt')),
+    path('auth/signup', include('djoser.urls.jwt')),
 ]
