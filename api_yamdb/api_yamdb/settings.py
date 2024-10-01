@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'api.apps.ApiConfig',
+    'rest_framework',
     'review.apps.ReviewConfig',
 ]
 
