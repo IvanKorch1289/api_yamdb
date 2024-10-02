@@ -1,9 +1,44 @@
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
-from django.contrib.auth import get_user_model
+# from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 
 
-User = get_user_model()
+ROLE_CHOICES = (
+    ('user', 'Пользователь'), ('moderator', 'Модератор'), ('admin', 'Админ')
+)
+
+
+class MyUser(AbstractUser):
+    email = models.EmailField(
+        unique=True,
+    )
+    username = models.CharField(
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message=(
+                    'Можно использовать латинские буквы и символы ., @, +, -.'
+                ),
+                code="invalid_username",
+            ),
+        ],
+        default=email,
+        unique=True,
+    )
+    first_name = models.CharField(
+        max_length=150,
+    )
+    last_name = models.CharField(
+        max_length=150,
+    )
+    bio = models.TextField(blank=True)
+    role = models.CharField(
+        choices=ROLE_CHOICES,
+        default='user',
+        max_length=15,
+    )
 
 
 class Categories(models.Model):
@@ -13,7 +48,7 @@ class Categories(models.Model):
         verbose_name='категория',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
 
     class Meta:
         verbose_name = 'Категория'
@@ -31,7 +66,7 @@ class Genres(models.Model):
         verbose_name='жанр',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
 
     class Meta:
         verbose_name = 'Жанр'
@@ -66,7 +101,6 @@ class Titles(models.Model):
         Categories,
         on_delete=models.CASCADE,
         related_name='genres',
-        to_field='slug',
         verbose_name='категория произведения'
     )
 
@@ -81,7 +115,7 @@ class Titles(models.Model):
 class Reviews(models.Model):
     text = models.TextField(verbose_name='текст отзыва')
     author = models.ForeignKey(
-        User,
+        MyUser,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='автор отзыва'
@@ -102,7 +136,7 @@ class Reviews(models.Model):
 
 class Comments(models.Model):
     author = models.ForeignKey(
-        User,
+        MyUser,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='автор комментария'

@@ -7,9 +7,9 @@ from api.views import (CategoriesViewSet, GenresViewSet,
 
 
 router = DefaultRouter()
-router.register('categories', CategoriesViewSet)
-router.register('genres', GenresViewSet)
-router.register('titles', TitlesViewSet)
+router.register(r'categories', CategoriesViewSet)
+router.register(r'genres', GenresViewSet)
+router.register(r'titles', TitlesViewSet)
 router.register(
     r'titles\/(?P<title_id>\d+)\/reviews',
     ReviewsViewSet,
@@ -24,4 +24,5 @@ router.register(
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include('djoser.urls.jwt')),
 ]
