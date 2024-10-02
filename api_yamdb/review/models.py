@@ -8,8 +8,6 @@ ROLE_CHOICES = (
     ('user', 'Пользователь'), ('moderator', 'Модератор'), ('admin', 'Админ')
 )
 
-# User = get_user_model()
-
 
 class MyUser(AbstractUser):
     email = models.EmailField(
@@ -50,7 +48,7 @@ class Categories(models.Model):
         verbose_name='категория',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
 
     class Meta:
         verbose_name = 'Категория'
@@ -68,7 +66,7 @@ class Genres(models.Model):
         verbose_name='жанр',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
 
     class Meta:
         verbose_name = 'Жанр'
@@ -103,7 +101,6 @@ class Titles(models.Model):
         Categories,
         on_delete=models.CASCADE,
         related_name='genres',
-        to_field='slug',
         verbose_name='категория произведения'
     )
 
@@ -158,35 +155,3 @@ class Comments(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name = 'Комментарии'
-
-
-# class MyUser(AbstractUser):
-#     email = models.EmailField(
-#         unique=True,
-#     )
-#     username = models.CharField(
-#         max_length=150,
-#         validators=[
-#             RegexValidator(
-#                 regex=r'^[\w.@+-]+\Z',
-#                 message=(
-#                     'Можно использовать латинские буквы и символы ., @, +, -.'
-#                 ),
-#                 code="invalid_username",
-#             ),
-#         ],
-#         default=email,
-#         unique=True,
-#     )
-#     first_name = models.CharField(
-#         max_length=150,
-#     )
-#     last_name = models.CharField(
-#         max_length=150,
-#     )
-#     bio = models.TextField(blank=True)
-#     role = models.CharField(
-#         choices=ROLE_CHOICES,
-#         default='user',
-#         max_length=15,
-#     )
