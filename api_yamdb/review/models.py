@@ -1,4 +1,6 @@
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import (MaxValueValidator,
+                                    MinValueValidator,
+                                    RegexValidator)
 from django.db import models
 # from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -68,7 +70,7 @@ class Genres(models.Model):
         verbose_name='жанр',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, primary_key=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -89,8 +91,7 @@ class Titles(models.Model):
     year = models.IntegerField(verbose_name='год выпуска')
     description = models.TextField(verbose_name='описание')
     rating = models.IntegerField(
-        blank=True,
-        null=True,
+        default=0,
         help_text='Рейтинг на основе оценок пользователей',
         verbose_name='рейтинг',
     )
@@ -99,8 +100,10 @@ class Titles(models.Model):
     # при попытке добваить категорию.
     genre = models.ManyToManyField(
         Genres,
-        db_table='title_genre_link',
         verbose_name='жанр произведения',
+        through='GenresTitles',
+        related_name='titlesganres',
+        # through_fields=('genre', 'title',)
     )
     category = models.ForeignKey(
         Categories,
@@ -133,6 +136,11 @@ class Reviews(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации',
         db_index=True
+    )
+    title = models.ForeignKey(
+        Titles,
+        on_delete=models.CASCADE,
+        related_name='reviews'
     )
 
     class Meta:
@@ -169,33 +177,13 @@ class Comments(models.Model):
         return self.text[:SHORT_TITLE]
 
 
-# class MyUser(AbstractUser):
-#     email = models.EmailField(
-#         unique=True,
-#     )
-#     username = models.CharField(
-#         max_length=150,
-#         validators=[
-#             RegexValidator(
-#                 regex=r'^[\w.@+-]+\Z',
-#                 message=(
-#                     'Можно использовать латинские буквы и символы ., @, +, -.'
-#                 ),
-#                 code="invalid_username",
-#             ),
-#         ],
-#         default=email,
-#         unique=True,
-#     )
-#     first_name = models.CharField(
-#         max_length=150,
-#     )
-#     last_name = models.CharField(
-#         max_length=150,
-#     )
-#     bio = models.TextField(blank=True)
-#     role = models.CharField(
-#         choices=ROLE_CHOICES,
-#         default='user',
-#         max_length=15,
-#     )
+class GenresTitles(models.Model):
+    genres = models.ForeignKey(
+        Genres,
+        on_delete=models.CASCADE,
+        to_field='slug',
+    )
+    titles = models.ForeignKey(
+        Titles,
+        on_delete=models.CASCADE
+    )
