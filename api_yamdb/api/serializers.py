@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from review.models import (Categories, Comments, Genres,
-                            Reviews, Titles)
+                           Reviews, Titles)
 
 
 User = get_user_model()
@@ -39,8 +39,9 @@ class TitlesSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'name', 'genre', 'category', 'decription', 'rating', 'year')
-        read_only_fields = ('rating')
+        fields = ('id', 'name', 'genre', 'category',
+                  'description', 'rating', 'year',)
+        read_only_fields = ('rating',)
         model = Titles
 
 
@@ -53,8 +54,8 @@ class ReviewsSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('pub_date', 'title')
+        fields = '__all__'
+        read_only_fields = ('pub_date', 'text', 'author',)
         model = Reviews
 
 
@@ -67,6 +68,6 @@ class CommentsSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'author', 'text', 'pub_date')
-        read_only_fields = ('pub_date', 'title', 'review')
+        exclude = ('review',)
+        read_only_fields = ('pub_date', 'title',)
         model = Comments
