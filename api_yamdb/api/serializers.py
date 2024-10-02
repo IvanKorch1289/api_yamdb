@@ -71,3 +71,10 @@ class CommentsSerializer(serializers.ModelSerializer):
         exclude = ('review',)
         read_only_fields = ('pub_date', 'title',)
         model = Comments
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
