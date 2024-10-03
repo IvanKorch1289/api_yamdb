@@ -20,5 +20,6 @@ class IsModerator(BasePermission):
     """Разделяет права для автора и авторизованного пользователя."""
     def has_permission(self, request, view):
         return request.user.role == 'moderator' or request.user.is_superuser is True
+
     def has_object_permission(self, request, view, obj):
         return request.user.role == 'moderator' or request.user.is_superuser is True
