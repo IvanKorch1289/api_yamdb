@@ -145,13 +145,21 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет для модели User."""
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated, IsAdmin,)
-    serializer_class = UserSerializer
+    serializer_class = AdminSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
+    lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
-    @action(detail=True, url_path='me/', methods=['get', 'patch'], permission_classes=(IsAuthenticated,))
+    @action(
+        detail=False,
+        url_path='me',
+        methods=['get', 'patch'],
+        permission_classes=(IsAuthenticated,)
+    )
     def profile_update(self, request):
         serializer = UserSerializer(self.request.user)
         if request.method == 'PATCH':

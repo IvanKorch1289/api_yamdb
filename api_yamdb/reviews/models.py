@@ -28,7 +28,6 @@ class MyUser(AbstractUser):
                 code="invalid_username",
             ),
         ],
-        default=email,
         unique=True,
     )
     first_name = models.CharField(

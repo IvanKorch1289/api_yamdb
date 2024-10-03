@@ -92,6 +92,41 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели User."""
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+
     class Meta:
         model = User
         fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+
+    def validate_last_name(self, value):
+        if len(value) > 150:
+            raise serializers.ValidationError(
+                'Максимальная длина 150 символов.'
+            )
+        return value
+
+    def validate_first_name(self, value):
+        if len(value) > 150:
+            raise serializers.ValidationError(
+                'Максимальная длина 150 символов.'
+            )
+        return value
+
+    def validate_role(self, value):
+        if self.instance and value != self.instance.role:
+            raise serializers.ValidationError('Роль не подлежит изменению.')
+        return value
+
+
+class AdminSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Follow с правами admin."""
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+
+
+    class Meta:
+        model = User
+        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        
