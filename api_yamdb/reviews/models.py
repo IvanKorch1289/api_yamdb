@@ -44,14 +44,14 @@ class MyUser(AbstractUser):
     )
 
 
-class Categories(models.Model):
+class Category(models.Model):
     name = models.CharField(
         max_length=256,
         help_text='Наименование категории',
         verbose_name='категория',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, primary_key=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -62,7 +62,7 @@ class Categories(models.Model):
         return self.name
 
 
-class Genres(models.Model):
+class Genre(models.Model):
     name = models.CharField(
         max_length=256,
         help_text='Наименование жанра',
@@ -80,7 +80,7 @@ class Genres(models.Model):
         return self.name
 
 
-class Titles(models.Model):
+class Title(models.Model):
     name = models.CharField(
         max_length=256,
         help_text='Наименование произведения',
@@ -95,16 +95,14 @@ class Titles(models.Model):
         verbose_name='рейтинг',
     )
     genre = models.ManyToManyField(
-        Genres,
+        Genre,
         verbose_name='жанр произведения',
-        through='GenresTitles',
-        related_name='titlesganres',
-        # through_fields=('genre', 'title',)
+        related_name='titleganres',
     )
     category = models.ForeignKey(
-        Categories,
+        Category,
         on_delete=models.CASCADE,
-        related_name='genres',
+        related_name='genries',
         to_field='slug',
         verbose_name='категория произведения'
     )
@@ -117,13 +115,13 @@ class Titles(models.Model):
         return self.name
 
 
-class Reviews(models.Model):
+class Review(models.Model):
     text = models.TextField(verbose_name='текст отзыва')
-    author = models.ForeignKey(
+    author = models.OneToOneField(
         MyUser,
         on_delete=models.CASCADE,
         related_name='reviews',
-        verbose_name='автор отзыва'
+        verbose_name='автор отзыва',
     )
     score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)]
@@ -134,7 +132,7 @@ class Reviews(models.Model):
         db_index=True
     )
     title = models.ForeignKey(
-        Titles,
+        Title,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
@@ -147,7 +145,7 @@ class Reviews(models.Model):
         return self.text[:SHORT_TITLE]
 
 
-class Comments(models.Model):
+class Comment(models.Model):
     author = models.ForeignKey(
         MyUser,
         on_delete=models.CASCADE,
@@ -155,7 +153,7 @@ class Comments(models.Model):
         verbose_name='автор комментария'
     )
     review = models.ForeignKey(
-        Reviews,
+        Review,
         on_delete=models.CASCADE,
         related_name='comments'
     )

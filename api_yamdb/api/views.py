@@ -2,65 +2,80 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 
-from rest_framework import viewsets, filters, status
-# from rest_framework.pagination import LimitOffsetPagination
+from rest_framework import viewsets, filters, status, permissions
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,)
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from review.models import (Categories, Comments, Genres,
-                           Reviews, Titles)
+from reviews.models import (Category, Comment, Genre,
+                           Review, Title)
 
-from .permissions import IsAuthorOrReadOnly, IsAdmin
-from api.serializers import (
-    CategoriesSerializer,
-    GenresSerializer,
-    TitlesSerializer,
-    ReviewsSerializer,
-    CommentsSerializer,
-    UserSerializer,
-    AdminSerializer
-)
+from .permissions import (IsAuthorOrReadOnly, IsAdmin, IsModerator,
+                          ReadOnly)
+from api.serializers import (CategorySerializer, GenreSerializer,
+                             TitleSerializer, ReviewSerializer,
+                             CommentSerializer, UserSerializer)
 
 User = get_user_model()
 
 
-class CategoriesViewSet(viewsets.ModelViewSet):
-    queryset = Categories.objects.all()
-    serializer_class = CategoriesSerializer
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return (ReadOnly(),)
+        return super().get_permissions()
 
-class GenresViewSet(viewsets.ModelViewSet):
-    queryset = Categories.objects.all()
-    serializer_class = GenresSerializer
+
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    permission_classes = (IsAdmin,)
+    pagination_class = LimitOffsetPagination
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return (ReadOnly(),)
+        return super().get_permissions()
 
 
-class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Titles.objects.all()
-    serializer_class = TitlesSerializer
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
 
 
-class ReviewsViewSet(viewsets.ModelViewSet):
-    queryset = Reviews.objects.all()
-    serializer_class = ReviewsSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    # permission_classes = (IsAuthorOrReadOnly,)
+
+    def create(self, request, *args, **kwargs):
+        if Review.objects.filter(
+            author=self.request.user
+        ).exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
     def get_title(self):
         title_id = self.kwargs.get('title_id', None)
         title = get_object_or_404(
-            Titles,
+            Title,
             pk=title_id
         )
         return title
 
     def get_score(self):
-        score = Reviews.objects.values_list(
+        score = Review.objects.values_list(
             'score',
             flat=True
         )
@@ -77,7 +92,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         title.save()
 
     def get_queryset(self):
-        return self.get_title.comments.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         score = self.get_score()
@@ -85,7 +100,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         print(serializer.validated_data)
         self.save_rating(score)
         serializer.save(
-            review=self.get_title(),
+            title=self.get_title(),
             author=self.request.user)
 
     def perform_update(self, serializer):
@@ -104,19 +119,16 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         score.pop(last_score)
         self.save_rating(score)
         instance.delete()
-            review=title,
-            author=self.request.user
-        )
 
 
-class CommentsViewSet(viewsets.ModelViewSet):
-    serializer_class = CommentsSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = (IsAuthorOrReadOnly,)
 
     def get_review(self):
         review_id = self.kwargs.get('review_id', None)
         review = get_object_or_404(
-            Reviews,
+            Review,
             pk=review_id
         )
         return review

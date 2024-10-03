@@ -4,54 +4,54 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from review.models import (Categories, Comments, Genres,
-                           Reviews, Titles)
+from reviews.models import (Category, Comment, Genre,
+                            Review, Title)
 
 
 User = get_user_model()
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор объекта категорий."""
 
     class Meta:
         fields = ('name', 'slug')
-        model = Categories
+        model = Category
 
 
-class GenresSerializer(serializers.ModelSerializer):
+class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор объекта жанров."""
 
     class Meta:
         fields = ('name', 'slug')
-        model = Genres
+        model = Genre
 
 
-class TitlesSerializer(serializers.ModelSerializer):
+class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор объекта произведений."""
 
-    genre = GenresSerializer(many=True, required=False)
+    genre = GenreSerializer(many=True, required=False)
     category = serializers.SlugRelatedField(
         slug_field='slug',
-        queryset=Categories.objects.all()
+        queryset=Category.objects.all()
     )
 
     class Meta:
         fields = ('id', 'name', 'genre', 'category',
                   'description', 'rating', 'year',)
         read_only_fields = ('rating',)
-        model = Titles
+        model = Title
 
     def create(self, validated_data):
         if 'genre' not in validated_data:
-            title = Titles.objects.create(**validated_data)
+            title = Title.objects.create(**validated_data)
             return title
         print(validated_data)
         genres = validated_data.pop('genre')
-        title = Titles.objects.create(**validated_data)
+        title = Title.objects.create(**validated_data)
         for genre in genres:
             current_genre = get_object_or_404(
-                Genres,
+                Genre,
                 **genre
             )
             title.genre.create(genre=current_genre)
@@ -59,26 +59,26 @@ class TitlesSerializer(serializers.ModelSerializer):
 
 
 
-class ReviewsSerializer(serializers.ModelSerializer):
+class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор объекта отзывов."""
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
     )
-    # title = serializers.StringRelatedField(
-    #     required=False,
-    #     # read_only=True
-    # )
-    
+    title = serializers.StringRelatedField(
+        required=False,
+        read_only=True
+    )
+
     class Meta:
         fields = '__all__'
-        read_only_fields = ('pub_date', 'text', 'author',)
-        model = Reviews
+        read_only_fields = ('pub_date', 'author',)
+        model = Review
 
 
-class CommentsSerializer(serializers.ModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор объектов комментариев."""
-    
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -86,9 +86,9 @@ class CommentsSerializer(serializers.ModelSerializer):
     review = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        exclude = ('review',)
+        fields = '__all__'
         read_only_fields = ('pub_date', 'title',)
-        model = Comments
+        model = Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
