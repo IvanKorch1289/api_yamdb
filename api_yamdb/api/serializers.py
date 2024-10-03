@@ -27,10 +27,26 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
 
 
+class TitleGetSerializer(serializers.ModelSerializer):
+    """Сериализатор объекта произведений только для GET-запросов."""
+
+    genre = GenreSerializer(many=True, required=True)
+    category = CategorySerializer(required=True)
+
+    class Meta:
+        fields = ('id', 'name', 'genre', 'category',
+                  'description', 'rating', 'year',)
+        model = Title
+
+
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор объекта произведений."""
 
-    genre = GenreSerializer(many=True, required=False)
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all()
@@ -42,21 +58,8 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only_fields = ('rating',)
         model = Title
 
-    def create(self, validated_data):
-        if 'genre' not in validated_data:
-            title = Title.objects.create(**validated_data)
-            return title
-        print(validated_data)
-        genres = validated_data.pop('genre')
-        title = Title.objects.create(**validated_data)
-        for genre in genres:
-            current_genre = get_object_or_404(
-                Genre,
-                **genre
-            )
-            title.genre.create(genre=current_genre)
-        return title
-
+    def to_representation(self, value):
+        return TitleGetSerializer(value).data
 
 
 class ReviewSerializer(serializers.ModelSerializer):

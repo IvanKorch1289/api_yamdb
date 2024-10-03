@@ -1,23 +1,26 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django.db.models import Sum
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets, filters, status, permissions
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,)
-from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from reviews.models import (Category, Comment, Genre,
-                           Review, Title)
-
-from .permissions import (IsAuthorOrReadOnly, IsAdmin, IsModerator,
-                          ReadOnly)
+from api.filters import TitleFilterSet
+from api.permissions import (IsAuthorOrReadOnly, IsAdmin,
+                             IsModerator, ReadOnly)
 from api.serializers import (CategorySerializer, GenreSerializer,
-                             TitleSerializer, ReviewSerializer,
-                             CommentSerializer, UserSerializer)
+                             TitleSerializer, TitleGetSerializer,
+                             ReviewSerializer, CommentSerializer,
+                             UserSerializer)
+from reviews.models import (Category, Comment, Genre,
+                            Review, Title)
+
 
 User = get_user_model()
 
@@ -34,30 +37,56 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return (ReadOnly(),)
         return super().get_permissions()
 
+    def retrieve(self, request, *args, **kwargs):
+        raise MethodNotAllowed('GET')
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PATCH')
+
 
 class GenreViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     permission_classes = (IsAdmin,)
-    pagination_class = LimitOffsetPagination
 
     def get_permissions(self):
         if self.request.method == 'GET':
             return (ReadOnly(),)
         return super().get_permissions()
 
+    def retrieve(self, request, *args, **kwargs):
+        raise MethodNotAllowed('GET')
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PATCH')
+
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    permission_classes = (IsAdmin,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    search_fields = ('name',)
+    filterset_class = TitleFilterSet
+    filter_fields = ('genre__slug',)
+    http_method_names = ('get', 'post', 'patch', 'delete')
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return (ReadOnly(),)
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return TitleGetSerializer
+        return TitleSerializer
+
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    # permission_classes = (IsAuthorOrReadOnly,)
 
     def create(self, request, *args, **kwargs):
         if Review.objects.filter(
@@ -148,7 +177,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели User."""
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated, IsAdmin,)
-    serializer_class = AdminSerializer
+    serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
