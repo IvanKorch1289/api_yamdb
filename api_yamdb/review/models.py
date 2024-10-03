@@ -1,4 +1,6 @@
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import (MaxValueValidator,
+                                    MinValueValidator,
+                                    RegexValidator)
 from django.db import models
 # from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -67,7 +69,7 @@ class Genres(models.Model):
         verbose_name='жанр',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, primary_key=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -88,18 +90,16 @@ class Titles(models.Model):
     year = models.IntegerField(verbose_name='год выпуска')
     description = models.TextField(verbose_name='описание')
     rating = models.IntegerField(
-        blank=True,
-        null=True,
+        default=0,
         help_text='Рейтинг на основе оценок пользователей',
         verbose_name='рейтинг',
     )
-    # нужно создать таблицу вручную, и для нее сделать сериализатор,
-    # выбрасывается исключение TypeError: 'Genres' object is not iterable,
-    # при попытке добваить категорию.
     genre = models.ManyToManyField(
         Genres,
-        db_table='title_genre_link',
         verbose_name='жанр произведения',
+        through='GenresTitles',
+        related_name='titlesganres',
+        # through_fields=('genre', 'title',)
     )
     category = models.ForeignKey(
         Categories,
@@ -132,6 +132,11 @@ class Reviews(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации',
         db_index=True
+    )
+    title = models.ForeignKey(
+        Titles,
+        on_delete=models.CASCADE,
+        related_name='reviews'
     )
 
     class Meta:
