@@ -65,20 +65,20 @@ class ReviewsSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username'
     )
-    # title = serializers.StringRelatedField(
-    #     required=False,
-    #     # read_only=True
-    # )
-    
+    title = serializers.StringRelatedField(
+        required=False,
+        read_only=True
+    )
+
     class Meta:
         fields = '__all__'
-        read_only_fields = ('pub_date', 'text', 'author',)
+        read_only_fields = ('pub_date', 'author',)
         model = Reviews
 
 
 class CommentsSerializer(serializers.ModelSerializer):
     """Сериализатор объектов комментариев."""
-    
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -86,7 +86,6 @@ class CommentsSerializer(serializers.ModelSerializer):
     review = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        exclude = ('review',)
         read_only_fields = ('pub_date', 'title',)
         model = Comments
 

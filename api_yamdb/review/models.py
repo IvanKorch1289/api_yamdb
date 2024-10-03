@@ -52,7 +52,7 @@ class Categories(models.Model):
         verbose_name='категория',
         db_index=True
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, primary_key=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -95,15 +95,10 @@ class Titles(models.Model):
         help_text='Рейтинг на основе оценок пользователей',
         verbose_name='рейтинг',
     )
-    # нужно создать таблицу вручную, и для нее сделать сериализатор,
-    # выбрасывается исключение TypeError: 'Genres' object is not iterable,
-    # при попытке добваить категорию.
     genre = models.ManyToManyField(
         Genres,
         verbose_name='жанр произведения',
-        through='GenresTitles',
         related_name='titlesganres',
-        # through_fields=('genre', 'title',)
     )
     category = models.ForeignKey(
         Categories,
@@ -123,11 +118,11 @@ class Titles(models.Model):
 
 class Reviews(models.Model):
     text = models.TextField(verbose_name='текст отзыва')
-    author = models.ForeignKey(
+    author = models.OneToOneField(
         MyUser,
         on_delete=models.CASCADE,
         related_name='reviews',
-        verbose_name='автор отзыва'
+        verbose_name='автор отзыва',
     )
     score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)]
@@ -175,15 +170,3 @@ class Comments(models.Model):
 
     def __str__(self):
         return self.text[:SHORT_TITLE]
-
-
-class GenresTitles(models.Model):
-    genres = models.ForeignKey(
-        Genres,
-        on_delete=models.CASCADE,
-        to_field='slug',
-    )
-    titles = models.ForeignKey(
-        Titles,
-        on_delete=models.CASCADE
-    )
