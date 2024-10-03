@@ -150,4 +150,4 @@ media/
 
 # миграции, временно.
 *migrations
-
+migrations/
