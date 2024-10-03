@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 
 from rest_framework import viewsets, filters, status
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
@@ -52,12 +53,51 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         )
         return title
 
+    def get_score(self):
+        score = Reviews.objects.values_list(
+            'score',
+            flat=True
+        )
+        print(score)
+        return score
+
+    def save_rating(self, score):
+        if score is not None:
+            rating = sum(score) / len(score)
+        else:
+            rating = 0
+        title = self.get_title()
+        title.rating = rating
+        title.save()
+
     def get_queryset(self):
         return self.get_title.comments.all()
 
     def perform_create(self, serializer):
-        title = self.get_title()
+        score = self.get_score()
+        score = list(score).append(serializer.validated_data['score'])
+        print(serializer.validated_data)
+        self.save_rating(score)
         serializer.save(
+            review=self.get_title(),
+            author=self.request.user)
+
+    def perform_update(self, serializer):
+        last_score = self.get_score().get(
+            pk=self.kwargs.get('review_id', None))
+        score = self.get_score()
+        score.pop(last_score)
+        score.append(serializer.validated_data['score'])
+        self.save_rating(score)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        last_score = self.get_score().get(
+            pk=self.kwargs.get('review_id', None))
+        score = self.get_score()
+        score.pop(last_score)
+        self.save_rating(score)
+        instance.delete()
             review=title,
             author=self.request.user
         )
