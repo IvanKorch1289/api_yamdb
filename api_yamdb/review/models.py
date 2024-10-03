@@ -28,7 +28,6 @@ class MyUser(AbstractUser):
                 code="invalid_username",
             ),
         ],
-        default=email,
         unique=True,
     )
     first_name = models.CharField(
@@ -95,9 +94,6 @@ class Titles(models.Model):
         help_text='Рейтинг на основе оценок пользователей',
         verbose_name='рейтинг',
     )
-    # нужно создать таблицу вручную, и для нее сделать сериализатор,
-    # выбрасывается исключение TypeError: 'Genres' object is not iterable,
-    # при попытке добваить категорию.
     genre = models.ManyToManyField(
         Genres,
         verbose_name='жанр произведения',
@@ -175,15 +171,3 @@ class Comments(models.Model):
 
     def __str__(self):
         return self.text[:SHORT_TITLE]
-
-
-class GenresTitles(models.Model):
-    genres = models.ForeignKey(
-        Genres,
-        on_delete=models.CASCADE,
-        to_field='slug',
-    )
-    titles = models.ForeignKey(
-        Titles,
-        on_delete=models.CASCADE
-    )

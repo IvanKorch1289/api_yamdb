@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 
 from rest_framework import viewsets, filters, status
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
+# from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,)
 from rest_framework.decorators import action
@@ -13,10 +13,16 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from review.models import (Categories, Comments, Genres,
                            Reviews, Titles)
 
-from .permissions import IsAuthorOrReadOnly, IsAdmin, IsModerator
-from api.serializers import (CategoriesSerializer, GenresSerializer,
-                             TitlesSerializer, ReviewsSerializer,
-                             CommentsSerializer, UserSerializer)
+from .permissions import IsAuthorOrReadOnly, IsAdmin
+from api.serializers import (
+    CategoriesSerializer,
+    GenresSerializer,
+    TitlesSerializer,
+    ReviewsSerializer,
+    CommentsSerializer,
+    UserSerializer,
+    AdminSerializer
+)
 
 User = get_user_model()
 
@@ -127,13 +133,21 @@ class CommentsViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет для модели User."""
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated, IsAdmin,)
-    serializer_class = UserSerializer
+    serializer_class = AdminSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
+    lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
-    @action(detail=True, url_path='me/', methods=['get', 'patch'], permission_classes=(IsAuthenticated,))
+    @action(
+        detail=False,
+        url_path='me',
+        methods=['get', 'patch'],
+        permission_classes=(IsAuthenticated,)
+    )
     def profile_update(self, request):
         serializer = UserSerializer(self.request.user)
         if request.method == 'PATCH':
