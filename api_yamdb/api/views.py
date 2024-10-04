@@ -1,15 +1,21 @@
+from datetime import datetime, timedelta
+
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
 from django_filters.rest_framework import DjangoFilterBackend
 
+from jwt import encode
+
 from rest_framework import viewsets, filters, status
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import (IsAuthenticated,)
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from api_yamdb.settings import SECRET_KEY
 from api.filters import TitleFilterSet
 from api.permissions import (IsAdmin, ReadOnly, IsAuthorOrModeratorOrReadOnly)
 from api.serializers import (CategorySerializer, GenreSerializer,
@@ -163,3 +169,24 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TokenAPIView(APIView):
+    """Вьюсет для модели User при создании токена."""
+    queryset = User.objects.all()
+    http_method_names = ['post']
+
+    def post(self, request):
+        get_object_or_404(
+            User,
+            confirmation_code=request.data.get('confirmation_code')
+        )
+
+        dt = datetime.now() + timedelta(days=1)
+
+        token = encode({
+            'id': request.data.get('confirmation_code'),
+            'exp': int(dt.strftime('%s'))
+        }, SECRET_KEY, algorithm='HS256')
+
+        return token.decode('utf-8')

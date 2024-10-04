@@ -13,7 +13,7 @@ ROLE_CHOICES = (
 SHORT_TITLE = 25
 
 
-class MyUser(AbstractUser):
+class User(AbstractUser):
     email = models.EmailField(unique=True,)
     username = models.CharField(
         max_length=150,
@@ -35,6 +35,10 @@ class MyUser(AbstractUser):
         choices=ROLE_CHOICES,
         default='user',
         max_length=15,
+    )
+    confirmation_code = models.CharField(
+        max_length=100,
+        null=True
     )
 
 
@@ -111,7 +115,7 @@ class Title(models.Model):
 class Review(models.Model):
     text = models.TextField(verbose_name='текст отзыва')
     author = models.ForeignKey(
-        MyUser,
+        User,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='автор отзыва',
@@ -146,7 +150,7 @@ class Review(models.Model):
 
 class Comment(models.Model):
     author = models.ForeignKey(
-        MyUser,
+        User,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='автор комментария'

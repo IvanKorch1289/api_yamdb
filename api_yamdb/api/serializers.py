@@ -119,10 +119,20 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class AdminSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Follow с правами admin."""
+    """Сериализатор для модели User с правами admin."""
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
 
     class Meta:
         model = User
-        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения токена."""
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'confirmation_code')
