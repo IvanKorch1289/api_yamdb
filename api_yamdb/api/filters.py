@@ -1,15 +1,14 @@
-from django_filters import FilterSet, ModelMultipleChoiceFilter
+from django_filters import FilterSet, filters
 
-from reviews.models import Genre, Title
+from reviews.models import Title
 
 
 class TitleFilterSet(FilterSet):
-    genre = ModelMultipleChoiceFilter(
-        queryset=Genre.objects.all(),
+    genre = filters.CharFilter(
         field_name='genre__slug',
-        lookup_expr='in'
+        lookup_expr='contains'
     )
 
     class Meta:
         model = Title
-        fields = ['genre']
+        fields = ('name', 'year', 'genre', 'category')
