@@ -1,8 +1,10 @@
+import random
+
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import (MaxValueValidator,
                                     MinValueValidator,
                                     RegexValidator)
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 
 
 ROLE_CHOICES = (
@@ -37,8 +39,8 @@ class User(AbstractUser):
         max_length=15,
     )
     confirmation_code = models.CharField(
-        max_length=100,
-        null=True
+        max_length=10,
+        default=random.randint(1111111111, 9999999999)
     )
 
 
