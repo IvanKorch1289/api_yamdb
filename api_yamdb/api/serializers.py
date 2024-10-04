@@ -14,6 +14,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('name', 'slug')
         model = Category
+        lookup_field = 'slug'
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -21,6 +22,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
+        lookup_field = 'slug'
         model = Genre
 
 
@@ -29,10 +31,10 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, required=True)
     category = CategorySerializer(required=True)
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
-        fields = ('id', 'name', 'genre', 'category',
-                  'description', 'rating', 'year',)
+        fields = '__all__'
         model = Title
 
 
@@ -48,11 +50,10 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
-        fields = ('id', 'name', 'genre', 'category',
-                  'description', 'rating', 'year',)
-        read_only_fields = ('rating',)
+        fields = '__all__'
         model = Title
 
     def to_representation(self, value):
@@ -98,20 +99,16 @@ class AdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
     def validate_last_name(self, value):
         if len(value) > 150:
-            raise serializers.ValidationError(
-                'Максимальная длина 150 символов.'
-            )
+            raise serializers.ValidationError('Не более 150 символов')
         return value
 
     def validate_first_name(self, value):
         if len(value) > 150:
-            raise serializers.ValidationError(
-                'Максимальная длина 150 символов.'
-            )
+            raise serializers.ValidationError('Не более 150 символов')
         return value
 
 
@@ -152,3 +149,13 @@ class SignupSerializer(serializers.ModelSerializer):
                 'Максимальная длина 254 символа.'
             )
         return value
+
+class AdminSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Follow с правами admin."""
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+

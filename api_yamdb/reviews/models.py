@@ -1,24 +1,22 @@
 import random
 
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import (MaxValueValidator,
                                     MinValueValidator,
                                     RegexValidator)
 from django.db import models
-# from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 
 ROLE_CHOICES = (
-    ('user', 'Пользователь'), ('moderator', 'Модератор'), ('admin', 'Админ')
+    ('user', 'Пользователь'),
+    ('moderator', 'Модератор'),
+    ('admin', 'Админ')
 )
 SHORT_TITLE = 25
-# User = get_user_model()
 
 
 class MyUser(AbstractUser):
-    email = models.EmailField(
-        unique=True,
-    )
+    email = models.EmailField(unique=True,)
     username = models.CharField(
         max_length=150,
         validators=[
@@ -32,12 +30,8 @@ class MyUser(AbstractUser):
         ],
         unique=True,
     )
-    first_name = models.CharField(
-        max_length=150,
-    )
-    last_name = models.CharField(
-        max_length=150,
-    )
+    first_name = models.CharField(max_length=150,)
+    last_name = models.CharField(max_length=150,)
     bio = models.TextField(blank=True)
     role = models.CharField(
         choices=ROLE_CHOICES,
@@ -65,7 +59,7 @@ class Category(models.Model):
         unique_together = ('name', 'slug')
 
     def __str__(self):
-        return self.name
+        return self.name[:SHORT_TITLE]
 
 
 class Genre(models.Model):
@@ -83,7 +77,7 @@ class Genre(models.Model):
         unique_together = ('name', 'slug')
 
     def __str__(self):
-        return self.name
+        return self.name[:SHORT_TITLE]
 
 
 class Title(models.Model):
@@ -95,12 +89,6 @@ class Title(models.Model):
     )
     year = models.IntegerField(verbose_name='год выпуска')
     description = models.TextField(verbose_name='описание')
-    rating = models.IntegerField(
-        default=None,
-        null=True,
-        help_text='Рейтинг на основе оценок пользователей',
-        verbose_name='рейтинг',
-    )
     genre = models.ManyToManyField(
         Genre,
         default=None,
@@ -123,12 +111,12 @@ class Title(models.Model):
         verbose_name = 'Произведения'
 
     def __str__(self):
-        return self.name
+        return self.name[:SHORT_TITLE]
 
 
 class Review(models.Model):
     text = models.TextField(verbose_name='текст отзыва')
-    author = models.OneToOneField(
+    author = models.ForeignKey(
         MyUser,
         on_delete=models.CASCADE,
         related_name='reviews',
@@ -151,6 +139,12 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_title_review_'
+            )
+        ]
 
     def __str__(self):
         return self.text[:SHORT_TITLE]
