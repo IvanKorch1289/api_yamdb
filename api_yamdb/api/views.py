@@ -1,23 +1,22 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from jwt import encode
-
 from rest_framework import viewsets, filters, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import MethodNotAllowed
-
 from rest_framework.permissions import (IsAuthenticated,
                                         AllowAny)
-
 from rest_framework.response import Response
-from rest_framework.views import APIView
+
+from rest_framework_simplejwt.tokens import AccessToken
 
 from api_yamdb.settings import SECRET_KEY
 from api.filters import TitleFilterSet
@@ -26,7 +25,8 @@ from api.permissions import (IsAdmin, ReadOnly,
 from api.serializers import (CategorySerializer, GenreSerializer,
                              TitleSerializer, TitleGetSerializer,
                              ReviewSerializer, CommentSerializer,
-                             UserSerializer, SignupSerializer, AdminSerializer)
+                             UserSerializer, SignupSerializer,
+                             AdminSerializer, TokenSerializer)
 
 from api.filters import TitleFilterSet
 from api.permissions import (IsAdmin, ReadOnly, IsAuthorOrModeratorOrReadOnly)
@@ -183,27 +183,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TokenAPIView(APIView):
-    """Вьюсет для модели User при создании токена."""
-    queryset = User.objects.all()
-    http_method_names = ['post']
-
-    def post(self, request):
-        get_object_or_404(
-            User,
-            confirmation_code=request.data.get('confirmation_code')
-        )
-
-        dt = datetime.now() + timedelta(days=1)
-
-        token = encode({
-            'id': request.data.get('confirmation_code'),
-            'exp': int(dt.strftime('%s'))
-        }, SECRET_KEY, algorithm='HS256')
-
-        return token.decode('utf-8')
-
-
 class SignupViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
     http_method_names = ('post')
@@ -227,3 +206,21 @@ class SignupViewSet(viewsets.ModelViewSet):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_token(request):
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data['username']
+    )
+
+    if default_token_generator.check_token(
+        user, serializer.validated_data['confirmation_code']
+    ):
+        token = AccessToken.for_user(user)
+        return Response({'token': str(token)}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

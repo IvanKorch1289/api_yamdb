@@ -93,7 +93,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class AdminSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Follow с правами admin."""
+    """Сериализатор для модели User с правами admin."""
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
 
@@ -134,7 +134,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = 'username', 'email'
+        fields = ('username', 'email')
 
     def validate_username(self, value):
         if value == 'me' or len(value) > 150:
@@ -150,11 +150,8 @@ class SignupSerializer(serializers.ModelSerializer):
             )
         return value
 
-class AdminSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели User с правами admin."""
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
 
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+class TokenSerializer(serializers.Serializer):
+    """Сериализатор для запроса токена."""
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
