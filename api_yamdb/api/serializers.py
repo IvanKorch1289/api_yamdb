@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
-
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from reviews.models import (Category, Comment, Genre,
                             Review, Title)
-
 
 User = get_user_model()
 
@@ -93,14 +92,14 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели User."""
+class AdminSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Follow с правами admin."""
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
 
     class Meta:
         model = User
-        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
     def validate_last_name(self, value):
         if len(value) > 150:
@@ -112,11 +111,44 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Не более 150 символов')
         return value
 
+
+class UserSerializer(AdminSerializer):
+    """Сериализатор для модели User."""
+
     def validate_role(self, value):
         if self.instance and value != self.instance.role:
             raise serializers.ValidationError('Роль не подлежит изменению.')
         return value
 
+
+class SignupSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    username = serializers.RegexField(
+        r'^[\w.@+-]+\Z',
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
+    class Meta:
+        model = User
+        fields = 'username', 'email'
+
+    def validate_username(self, value):
+        if value == 'me' or len(value) > 150:
+            raise serializers.ValidationError(
+                'Недопустимый username.'
+            )
+        return value
+
+    def validate_email(self, value):
+        if len(value) > 254:
+            raise serializers.ValidationError(
+                'Максимальная длина 254 символа.'
+            )
+        return value
 
 class AdminSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Follow с правами admin."""
@@ -125,4 +157,5 @@ class AdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+

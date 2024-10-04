@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
@@ -7,8 +8,18 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters, status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,)
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.permissions import (IsAuthenticated,
+                                        AllowAny)
 from rest_framework.response import Response
+
+from api.filters import TitleFilterSet
+from api.permissions import (IsAdmin, ReadOnly,
+                             IsAuthorOrModeratorOrReadOnly)
+from api.serializers import (CategorySerializer, GenreSerializer,
+                             TitleSerializer, TitleGetSerializer,
+                             ReviewSerializer, CommentSerializer,
+                             UserSerializer, SignupSerializer, AdminSerializer)
 
 from api.filters import TitleFilterSet
 from api.permissions import (IsAdmin, ReadOnly, IsAuthorOrModeratorOrReadOnly)
@@ -16,9 +27,9 @@ from api.serializers import (CategorySerializer, GenreSerializer,
                              TitleSerializer, TitleGetSerializer,
                              ReviewSerializer, CommentSerializer,
                              UserSerializer)
+
 from reviews.models import (Category, Genre,
                             Review, Title)
-
 
 User = get_user_model()
 
@@ -141,7 +152,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели User."""
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated, IsAdmin,)
-    serializer_class = UserSerializer
+    serializer_class = AdminSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
@@ -163,3 +174,28 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SignupViewSet(viewsets.ModelViewSet):
+    permission_classes = (AllowAny,)
+    http_method_names = ('post')
+
+    def create(self, request):
+        serializer = SignupSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            send_mail(
+                subject='Код подтверждения',
+                message=f'Ваш код: {user.confirmation_code}',
+                from_email='info@api_yamdb.not',
+                recipient_list=[user.email]
+            )
+            return Response(
+                {'email': user.email, 'username': user.username},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
