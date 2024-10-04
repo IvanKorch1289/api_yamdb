@@ -13,7 +13,8 @@ from rest_framework.response import Response
 
 from api.filters import TitleFilterSet
 from api.permissions import (IsAuthorOrReadOnly, IsAdmin,
-                             IsModerator, ReadOnly)
+                             IsModerator, ReadOnly,
+                             IsAuthorOrModeratorOrReadOnly)
 from api.serializers import (CategorySerializer, GenreSerializer,
                              TitleSerializer, TitleGetSerializer,
                              ReviewSerializer, CommentSerializer,
@@ -87,6 +88,16 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    permission_classes = (IsAuthorOrModeratorOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete',]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return (ReadOnly(),)
+        if bool(self.request.user.is_authenticated
+                and self.request.user.role == 'admin'):
+            return (IsAdmin(),)
+        return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
         if Review.objects.filter(
@@ -134,25 +145,34 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         last_score = self.get_score().get(
-            pk=self.kwargs.get('review_id', None))
-        score = self.get_score()
-        score.pop(last_score)
+            pk=self.kwargs.get('pk', None))
+        score = list(self.get_score())
+        score.remove(last_score)
         score.append(serializer.validated_data['score'])
         self.save_rating(score)
         serializer.save()
 
     def perform_destroy(self, instance):
         last_score = self.get_score().get(
-            pk=self.kwargs.get('review_id', None))
-        score = self.get_score()
-        score.pop(last_score)
+            pk=self.kwargs.get('pk', None))
+        score = list(self.get_score())
+        score.remove(last_score)
         self.save_rating(score)
         instance.delete()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthorOrModeratorOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete',]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return (ReadOnly(),)
+        if bool(self.request.user.is_authenticated
+                and self.request.user.role == 'admin'):
+            return (IsAdmin(),)
+        return super().get_permissions()
 
     def get_review(self):
         review_id = self.kwargs.get('review_id', None)
