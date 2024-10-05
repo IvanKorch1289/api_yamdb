@@ -1,18 +1,10 @@
-import random
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import (MaxValueValidator,
                                     MinValueValidator,
                                     RegexValidator)
 from django.db import models
 
-
-ROLE_CHOICES = (
-    ('user', 'Пользователь'),
-    ('moderator', 'Модератор'),
-    ('admin', 'Админ')
-)
-SHORT_TITLE = 25
+from reviews.constants import SHORT_TITLE, ROLE_CHOICES
 
 
 class User(AbstractUser):
@@ -38,9 +30,9 @@ class User(AbstractUser):
         default='user',
         max_length=15,
     )
-    confirmation_code = models.CharField(
-        max_length=10,
-        default=random.randint(1111111111, 9999999999)
+    confirmation_code = models.SlugField(
+        null=True,
+        blank=True
     )
 
 

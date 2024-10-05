@@ -1,9 +1,6 @@
-from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
 
-from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
@@ -16,9 +13,8 @@ from rest_framework.permissions import (IsAuthenticated,
                                         AllowAny)
 from rest_framework.response import Response
 
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from api_yamdb.settings import SECRET_KEY
 from api.filters import TitleFilterSet
 from api.permissions import (IsAdmin, ReadOnly,
                              IsAuthorOrModeratorOrReadOnly)
@@ -34,9 +30,10 @@ from api.serializers import (CategorySerializer, GenreSerializer,
                              TitleSerializer, TitleGetSerializer,
                              ReviewSerializer, CommentSerializer,
                              UserSerializer)
-
+from api.utils import get_user_and_send_mail
 from reviews.models import (Category, Genre,
                             Review, Title)
+
 
 User = get_user_model()
 
@@ -183,29 +180,21 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class SignupViewSet(viewsets.ModelViewSet):
-    permission_classes = (AllowAny,)
-    http_method_names = ('post')
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def sign_up(request):
+    user = User.objects.filter(username=request.data.get('username'))
+    if user.exists() and request.data.get('email') == user[0].email:
+        get_user_and_send_mail(user)
+        return Response(request.data, status=status.HTTP_200_OK)
 
-    def create(self, request):
-        serializer = SignupSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            send_mail(
-                subject='Код подтверждения',
-                message=f'Ваш код: {user.confirmation_code}',
-                from_email='info@api_yamdb.not',
-                recipient_list=[user.email]
-            )
-            return Response(
-                {'email': user.email, 'username': user.username},
-                status=status.HTTP_200_OK
-            )
-        else:
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    serializer = SignupSerializer(data=request.data)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+        user = User.objects.filter(**serializer.data)
+        get_user_and_send_mail(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -217,10 +206,8 @@ def get_token(request):
         User,
         username=serializer.validated_data['username']
     )
-
-    if default_token_generator.check_token(
-        user, serializer.validated_data['confirmation_code']
-    ):
-        token = AccessToken.for_user(user)
+    request_code = serializer.validated_data['confirmation_code']
+    if request_code == user.confirmation_code:
+        token = RefreshToken.for_user(user)
         return Response({'token': str(token)}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
