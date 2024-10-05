@@ -1,9 +1,9 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from reviews.models import (Category, Comment, Genre,
                             Review, Title)
+
 
 User = get_user_model()
 
@@ -99,7 +99,8 @@ class AdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
 
     def validate_last_name(self, value):
         if len(value) > 150:
@@ -122,15 +123,7 @@ class UserSerializer(AdminSerializer):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-    username = serializers.RegexField(
-        r'^[\w.@+-]+\Z',
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
+    """Сериализатор для метода регистрации."""
 
     class Meta:
         model = User
@@ -153,5 +146,6 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для запроса токена."""
+
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)

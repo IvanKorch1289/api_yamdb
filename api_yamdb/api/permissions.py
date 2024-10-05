@@ -5,9 +5,10 @@ class IsAuthorOrReadOnly(BasePermission):
     """Разделяет права для автора и авторизованного пользователя."""
 
     def has_object_permission(self, request, view, obj):
-        return bool(request.user.is_authenticated
-                    and (obj.author == request.user
-                    or request.method in SAFE_METHODS))
+        return bool(
+            request.user.is_authenticated and
+            (obj.author == request.user or request.method in SAFE_METHODS)
+        )
 
 
 class IsAdmin(BasePermission):
@@ -32,10 +33,10 @@ class IsModerator(BasePermission):
     """Разделяет права для автора и авторизованного пользователя."""
 
     def has_permission(self, request, view):
-        return request.user.role == 'moderator' or request.user.is_superuser is True
+        return request.user.role == 'moderator' or request.user.is_superuser
 
     def has_object_permission(self, request, view, obj):
-        return request.user.role == 'moderator' or request.user.is_superuser is True
+        return request.user.role == 'moderator' or request.user.is_superuser
 
 
 class IsAuthorOrModeratorOrReadOnly(BasePermission):

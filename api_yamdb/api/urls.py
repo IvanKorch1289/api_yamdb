@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from api.views import (CategoryViewSet, GenreViewSet,
                        TitleViewSet, ReviewViewSet,
                        CommentViewSet, UserViewSet,
-                       SignupViewSet, get_token)
+                       sign_up, get_token)
 
 
 router = DefaultRouter()
@@ -22,9 +22,9 @@ router.register(
     basename='comments'
 )
 router.register('users', UserViewSet, basename='users')
-router.register('auth/signup', SignupViewSet, basename='signup')
 
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/token/', get_token),
+    path('auth/signup/', sign_up)
 ]
