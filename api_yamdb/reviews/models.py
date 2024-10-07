@@ -4,8 +4,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
-from reviews.constants import (MAX_FIELD_NAME, MAX_LENGTH_USERNAME, 
-                               MAX_SCORE, MIN_SCORE, SHORT_TITLE, 
+from reviews.constants import (MAX_FIELD_NAME, MAX_LENGTH_USERNAME,
+                               MAX_SCORE, MIN_SCORE, SHORT_TITLE,
                                USER_NAME_REGEX)
 from reviews.enums import UserRoles
 
