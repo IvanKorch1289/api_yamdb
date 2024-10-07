@@ -4,9 +4,10 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
-from reviews.constants import (MAX_FIELD_NAME, MAX_LEN_ROLE_NAME,
-                               MAX_LENGTH_USERNAME, MAX_SCORE, MIN_SCORE,
-                               ROLE_CHOICES, SHORT_TITLE, USER_NAME_REGEX)
+from reviews.constants import (MAX_FIELD_NAME, MAX_LENGTH_USERNAME, 
+                               MAX_SCORE, MIN_SCORE, SHORT_TITLE, 
+                               USER_NAME_REGEX)
+from reviews.enums import UserRoles
 
 
 class NameModel(models.Model):
@@ -70,14 +71,27 @@ class User(AbstractUser):
     )
     bio = models.TextField(blank=True)
     role = models.CharField(
-        choices=ROLE_CHOICES,
-        default='user',
-        max_length=MAX_LEN_ROLE_NAME
+        verbose_name='роль',
+        max_length=UserRoles.max_length_field(),
+        choices=UserRoles.choices(),
+        default=UserRoles.user.name
     )
     confirmation_code = models.SlugField(
         null=True,
         blank=True
     )
+
+    @property
+    def is_admin(self):
+        return self.role == UserRoles.admin.name or self.is_superuser
+
+    @property
+    def is_moderator(self):
+        return self.role == UserRoles.moderator.name
+
+    @property
+    def is_user(self):
+        return self.role == UserRoles.user.name
 
 
 class Category(NameModel, SlugModel):
