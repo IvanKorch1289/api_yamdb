@@ -5,7 +5,7 @@ class IsAuthorOrReadOnly(BasePermission):
     """Разделяет права для автора и авторизованного пользователя."""
 
     def has_object_permission(self, request, view, obj):
-        return bool(
+        return (
             request.user.is_authenticated
             and (obj.author == request.user or request.method in SAFE_METHODS)
         )
@@ -16,11 +16,11 @@ class IsAdmin(BasePermission):
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and (
-            request.user.role == 'admin' or request.user.is_superuser is True)
+            request.user.is_admin or request.user.is_superuser)
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and (
-            request.user.role == 'admin' or request.user.is_superuser is True)
+            request.user.is_admin or request.user.is_superuser)
 
 
 class ReadOnly(BasePermission):
@@ -33,23 +33,23 @@ class IsModerator(BasePermission):
     """Разделяет права для автора и авторизованного пользователя."""
 
     def has_permission(self, request, view):
-        return request.user.role == 'moderator' or request.user.is_superuser
+        return request.user.is_moderator or request.user.is_superuser
 
     def has_object_permission(self, request, view, obj):
-        return request.user.role == 'moderator' or request.user.is_superuser
+        return request.user.is_moderator or request.user.is_superuser
 
 
 class IsAuthorOrModeratorOrReadOnly(BasePermission):
     def has_permission(self, request, view):
-        return bool(
+        return (
             request.user.is_authenticated
             or request.method in SAFE_METHODS
         )
 
     def has_object_permission(self, request, view, obj):
-        return bool(
+        return (
             request.user.is_authenticated
-            and (request.user.role == 'moderator'
-                 or request.user.is_superuser is True
+            and (request.user.is_moderator
+                 or request.user.is_superuser
                  or obj.author == request.user)
         )
