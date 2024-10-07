@@ -9,3 +9,5 @@ MIN_SCORE = 1
 MAX_SCORE = 10
 
 USER_NAME_REGEX = r'^[\w.@+-]+\Z'
+
+NON_VALID_USERNAME = 'me'
