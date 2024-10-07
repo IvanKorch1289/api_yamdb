@@ -1,39 +1,23 @@
 
+from api.filters import TitleFilterSet
+from api.permissions import IsAdmin, IsAuthorOrModeratorOrReadOnly, ReadOnly
+from api.serializers import (AdminSerializer, CategorySerializer,
+                             CommentSerializer, GenreSerializer,
+                             ReviewSerializer, SignupSerializer,
+                             TitleGetSerializer, TitleSerializer,
+                             TokenSerializer, UserSerializer)
+from api.utils import get_user_and_send_mail
 from django.contrib.auth import get_user_model
-
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-
 from django_filters.rest_framework import DjangoFilterBackend
-
-from rest_framework import viewsets, filters, status
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.permissions import (IsAuthenticated,
-                                        AllowAny)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from api.filters import TitleFilterSet
-from api.permissions import (IsAdmin, ReadOnly,
-                             IsAuthorOrModeratorOrReadOnly)
-from api.serializers import (CategorySerializer, GenreSerializer,
-                             TitleSerializer, TitleGetSerializer,
-                             ReviewSerializer, CommentSerializer,
-                             UserSerializer, SignupSerializer,
-                             AdminSerializer, TokenSerializer)
-
-from api.filters import TitleFilterSet
-from api.permissions import (IsAdmin, ReadOnly, IsAuthorOrModeratorOrReadOnly)
-from api.serializers import (CategorySerializer, GenreSerializer,
-                             TitleSerializer, TitleGetSerializer,
-                             ReviewSerializer, CommentSerializer,
-                             UserSerializer)
-from api.utils import get_user_and_send_mail
-from reviews.models import (Category, Genre,
-                            Review, Title)
-
+from reviews.models import Category, Genre, Review, Title
 
 User = get_user_model()
 
@@ -43,7 +27,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('name', 'slug')
+    lookup_field = 'slug'
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -61,8 +46,9 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('name', 'slug')
     permission_classes = (IsAdmin,)
+    lookup_field = 'slug'
 
     def get_permissions(self):
         if self.request.method == 'GET':

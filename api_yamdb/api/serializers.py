@@ -1,9 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
-from reviews.models import (Category, Comment, Genre,
-                            Review, Title)
-
+from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
 
@@ -13,8 +10,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
-        model = Category
         lookup_field = 'slug'
+        model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -115,6 +112,23 @@ class AdminSerializer(serializers.ModelSerializer):
 
 class UserSerializer(AdminSerializer):
     """Сериализатор для модели User."""
+
+    def validate(self, data):
+        """Запрещает пользователям присваивать себе имя me
+        и использовать повторные username и email."""
+        if data.get('username') == 'me':
+            raise serializers.ValidationError(
+                'Использовать имя me запрещено'
+            )
+        if User.objects.filter(username=data.get('username')):
+            raise serializers.ValidationError(
+                'Пользователь с таким username уже существует'
+            )
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует'
+            )
+        return data
 
     def validate_role(self, value):
         if self.instance and value != self.instance.role:
