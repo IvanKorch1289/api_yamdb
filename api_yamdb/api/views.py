@@ -92,6 +92,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'GET':
             return (IsAuthenticatedOrReadOnly(),)
+        return super().get_permissions()
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -112,7 +113,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            return (IsAuthenticatedOrReadOnly,)
+            return (IsAuthenticatedOrReadOnly(),)
         return super().get_permissions()
 
     def get_review(self):
