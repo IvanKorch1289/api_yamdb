@@ -1,9 +1,9 @@
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
-from reviews.models import (Category, Comment, Genre,
-                            Review, Title)
-
+from reviews.constants import NON_VALID_USERNAME
+from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
 
@@ -13,8 +13,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
-        model = Category
         lookup_field = 'slug'
+        model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -31,7 +31,7 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, required=True)
     category = CategorySerializer(required=True)
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.IntegerField(read_only=True, default=None)
 
     class Meta:
         fields = '__all__'
@@ -44,13 +44,13 @@ class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
-        many=True
+        many=True,
+        allow_empty=False
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all()
     )
-    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         fields = '__all__'
@@ -62,19 +62,27 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор объекта отзывов."""
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
     )
-    title = serializers.StringRelatedField(
-        required=False,
-        read_only=True
-    )
 
     class Meta:
-        fields = '__all__'
-        read_only_fields = ('pub_date', 'author',)
+        fields = ('id', 'author', 'text', 'score', 'pub_date')
+        read_only_fields = ('id', )
         model = Review
+
+    def validate(self, data):
+        """Запрещает повторный отзыв тем же пользователем."""
+        if Review.objects.filter(
+            author=data.get('username'),
+            title=data.get('title_id')
+        ).exists():
+            raise serializers.ValidationError(
+                'Отзыв уже оставлен'
+            )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -84,42 +92,38 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username'
     )
-    review = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    # review = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        fields = '__all__'
-        read_only_fields = ('pub_date', 'title',)
+        fields = ('id', 'author', 'text', 'pub_date')
+        read_only_fields = ('id', )
         model = Comment
 
 
-class AdminSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели User с правами admin."""
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели User."""
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name',
-                  'last_name', 'bio', 'role')
+        fields = ('username', 'first_name', 'last_name',
+                  'email', 'bio', 'role')
 
-    def validate_last_name(self, value):
-        if len(value) > 150:
-            raise serializers.ValidationError('Не более 150 символов')
-        return value
-
-    def validate_first_name(self, value):
-        if len(value) > 150:
-            raise serializers.ValidationError('Не более 150 символов')
-        return value
-
-
-class UserSerializer(AdminSerializer):
-    """Сериализатор для модели User."""
-
-    def validate_role(self, value):
-        if self.instance and value != self.instance.role:
-            raise serializers.ValidationError('Роль не подлежит изменению.')
-        return value
+    def validate(self, data):
+        """Запрещает пользователям присваивать себе имя me
+        и использовать повторные username и email."""
+        if data.get('username') == NON_VALID_USERNAME:
+            raise serializers.ValidationError(
+                'Использовать имя me запрещено'
+            )
+        if User.objects.filter(username=data.get('username')):
+            raise serializers.ValidationError(
+                'Пользователь с таким username уже существует'
+            )
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует'
+            )
+        return data
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -129,17 +133,18 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email')
 
+    # def validate(self, data):
+    #     user = User.objects.filter(username=data.get('username'))
+    #     if user.exists() and data.get('email') != user[0].email:
+    #         raise serializers.ValidationError(
+    #             'Пользователь с таким username уже существует'
+    #         )
+    #     return data
+
     def validate_username(self, value):
-        if value == 'me' or len(value) > 150:
+        if value == NON_VALID_USERNAME:
             raise serializers.ValidationError(
                 'Недопустимый username.'
-            )
-        return value
-
-    def validate_email(self, value):
-        if len(value) > 254:
-            raise serializers.ValidationError(
-                'Максимальная длина 254 символа.'
             )
         return value
 

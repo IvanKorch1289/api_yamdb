@@ -20,6 +20,9 @@ class TitleAdmin(admin.ModelAdmin):
         'category',
         'genres'
     )
+    search_fields = (
+        'name',
+    )
 
     @admin.display(description='Произведение')
     def short_name(self, obj):
@@ -40,7 +43,7 @@ class TitleAdmin(admin.ModelAdmin):
 
     @admin.display(description='Рейтинг')
     def score(self, obj):
-        return obj.rating
+        return obj.rating if obj.rating else 'Нет данных'
 
 
 @admin.register(User)
@@ -61,6 +64,9 @@ class ReviewAdmin(admin.ModelAdmin):
         'title',
         'pub_date',
     )
+    search_fields = (
+        'text',
+    )
 
     @admin.display(description='текст отзыва')
     def short_text(self, obj):
@@ -77,6 +83,9 @@ class CommentAdmin(admin.ModelAdmin):
         'review',
         'pub_date',
     )
+    search_fields = (
+        'text',
+    )
 
     @admin.display(description='текст отзыва')
     def short_text(self, obj):
@@ -91,6 +100,9 @@ class CategoryAdmin(admin.ModelAdmin):
         'name',
         'slug',
     )
+    search_fields = (
+        'name',
+    )
 
 
 @admin.register(Genre)
@@ -98,6 +110,9 @@ class GenreAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'slug',
+    )
+    search_fields = (
+        'name',
     )
 
 
