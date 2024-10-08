@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
-
 from rest_framework import serializers
 
+from api.utils import get_user_and_send_mail
 from reviews.constants import NON_VALID_USERNAME
 from reviews.models import Category, Comment, Genre, Review, Title
+
 
 User = get_user_model()
 
@@ -73,16 +74,22 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', )
         model = Review
 
-    def validate(self, data):
+    def create(self, validated_data):
         """Запрещает повторный отзыв тем же пользователем."""
+
+        user = self.context['request'].user
+        title_id = (self.context
+                    .get('request')
+                    .parser_context.get('kwargs')
+                    .get('title_id'))
         if Review.objects.filter(
-            author=data.get('username'),
-            title=data.get('title_id')
+            author=user,
+            title=title_id
         ).exists():
             raise serializers.ValidationError(
                 'Отзыв уже оставлен'
             )
-        return data
+        return super().create(validated_data)
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -132,13 +139,12 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email')
 
-    # def validate(self, data):
-    #     user = User.objects.filter(username=data.get('username'))
-    #     if user.exists() and data.get('email') != user[0].email:
-    #         raise serializers.ValidationError(
-    #             'Пользователь с таким username уже существует'
-    #         )
-    #     return data
+    def create(self, validated_data):
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            email=validated_data['email']
+        )
+        return user
 
     def validate_username(self, value):
         if value == NON_VALID_USERNAME:

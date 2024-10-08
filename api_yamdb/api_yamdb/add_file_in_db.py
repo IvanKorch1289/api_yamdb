@@ -1,7 +1,7 @@
 import csv
 import os
-import django
 
+import django
 from django.contrib.auth import get_user_model
 
 from reviews.models import Category

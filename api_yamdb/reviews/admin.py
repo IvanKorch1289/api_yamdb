@@ -1,13 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
+from django.db.models import Avg
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
-from django.db.models import Avg
-from .models import Title, Category, Comment, Genre, Review, User
 
-from .constants import SHORT_TITLE
+from reviews.constants import SHORT_TITLE
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 @admin.register(Title)
