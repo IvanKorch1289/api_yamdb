@@ -3,19 +3,17 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import MethodNotAllowed
-from rest_framework import mixins
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly,
-                                        SAFE_METHODS)
+from rest_framework.permissions import (SAFE_METHODS, AllowAny,
+                                        IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.filters import TitleFilterSet
-from api.permissions import (IsAdminOrReadOnly, IsAdmin, IsAuthor,
+from api.permissions import (IsAdmin, IsAdminOrReadOnly,
                              IsReviewOwnerOrReadOnly,
                              IsSuperOrIsAdminOrIsModeratorOrIsAuthor)
 from api.serializers import (CategorySerializer, CommentSerializer,
@@ -109,13 +107,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Comment."""
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthor,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsSuperOrIsAdminOrIsModeratorOrIsAuthor,)
     http_method_names = ['get', 'post', 'patch', 'delete']
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
     def get_review(self):
         return get_object_or_404(
@@ -165,8 +159,8 @@ class UserViewSet(viewsets.ModelViewSet):
 def sign_up(request):
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user, _ = User.objects.get_or_create(**serializer.validated_data)
-    get_user_and_send_mail(user.username)
+    serializer.save()
+    get_user_and_send_mail(serializer.data['username'])
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 

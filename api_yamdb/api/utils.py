@@ -7,11 +7,12 @@ from reviews.models import User
 
 
 def get_user_and_send_mail(username):
-    user = User.objects.select_for_update().filter(username=username)
-    user.update(confirmation_code=str(uuid4()).split('-')[0])
+    user = User.objects.get(username=username)
+    user.confirmation_code = str(uuid4()).split('-')[0]
+    user.save()
     send_mail(
         subject='Код подтверждения',
-        message=f'Ваш код: {user[0].confirmation_code}',
+        message=f'Ваш код: {user.confirmation_code}',
         from_email=EMAIL_SENDER,
-        recipient_list=[user[0].email]
+        recipient_list=[user.email]
     )
