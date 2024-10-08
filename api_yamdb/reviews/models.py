@@ -69,7 +69,7 @@ class User(AbstractUser):
         ],
         unique=True,
     )
-    bio = models.TextField(blank=True)
+    bio = models.TextField(blank=True, verbose_name='Биография')
     role = models.CharField(
         verbose_name='роль',
         max_length=UserRoles.max_length_field(),
@@ -98,7 +98,7 @@ class Category(NameModel, SlugModel):
 
     class Meta:
         verbose_name = 'Категория'
-        verbose_name = 'Категории'
+        verbose_name_plural = 'Категории'
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'slug'],
@@ -111,7 +111,7 @@ class Genre(NameModel, SlugModel):
 
     class Meta:
         verbose_name = 'Жанр'
-        verbose_name = 'Жанры'
+        verbose_name_plural = 'Жанры'
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'slug'],
@@ -152,7 +152,7 @@ class Title(NameModel):
 
     class Meta:
         verbose_name = 'Произведение'
-        verbose_name = 'Произведения'
+        verbose_name_plural = 'Произведения'
         default_related_name = 'titles'
         ordering = ['-year', 'name']
 
@@ -172,17 +172,19 @@ class Review(TextAndDateModel):
         validators=[
             MinValueValidator(MIN_SCORE),
             MaxValueValidator(MAX_SCORE)
-        ]
+        ],
+        verbose_name='Рейтинг',
     )
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Произведение'
     )
 
     class Meta:
         verbose_name = 'Отзыв'
-        verbose_name = 'Отзывы'
+        verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
@@ -201,9 +203,10 @@ class Comment(TextAndDateModel):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='comments',
+        verbose_name='Отзыв'
     )
 
     class Meta:
         verbose_name = 'Комментарий'
-        verbose_name = 'Комментарии'
+        verbose_name_plural = 'Комментарии'
