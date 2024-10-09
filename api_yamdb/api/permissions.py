@@ -1,6 +1,15 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
+class IsAdmin(BasePermission):
+    """Только для аутентифицированных пользователей,
+    имеющих статус администратора."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.is_admin or request.user.is_superuser)
+
+
 class IsAdminOrReadOnly(BasePermission):
     """Для аутентифицированных пользователей, имеющих статус администратора,
     иначе только просмотр."""
@@ -22,5 +31,5 @@ class IsAdminOrOwnerOrReadOnly(BasePermission):
             request.method in SAFE_METHODS
             or request.user.is_admin
             or request.user.is_moderator
-            or (obj.author == request.user)
+            or obj.author == request.user
         )

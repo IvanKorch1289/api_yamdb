@@ -1,13 +1,11 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import (MaxValueValidator, MinValueValidator,
-                                    RegexValidator)
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from reviews.constants import (MAX_FIELD_NAME, MAX_LENGTH_USERNAME, MAX_SCORE,
-                               MIN_SCORE, NON_VALID_USERNAME,
-                               SHORT_TITLE, USER_NAME_REGEX)
+                               MIN_SCORE, SHORT_TITLE)
 from reviews.enums import UserRoles
-from reviews.validators import validate_max_date_title
+from reviews.validators import validate_max_date_title, validate_username
 
 
 class NameModel(models.Model):
@@ -63,22 +61,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True,)
     username = models.CharField(
         max_length=MAX_LENGTH_USERNAME,
-        validators=[
-            RegexValidator(
-                regex=USER_NAME_REGEX,
-                message=(
-                    'Можно использовать латинские буквы и символы ., @, +, -.'
-                ),
-                code="invalid_username",
-            ),
-            RegexValidator(
-                regex=NON_VALID_USERNAME,
-                message=(
-                    'Нельзя использовать me в качестве username'
-                ),
-                code="invalid_username",
-            ),
-        ],
+        validators=[validate_username],
         unique=True,
     )
     bio = models.TextField(blank=True, verbose_name='Биография')
