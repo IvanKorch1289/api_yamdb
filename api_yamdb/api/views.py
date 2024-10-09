@@ -44,7 +44,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('name')
-    permission_classes = (IsAdminOrOwnerOrReadOnly, )
+    permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilterSet
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -59,7 +59,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Review."""
 
     serializer_class = ReviewSerializer
-    permission_classes = (IsAdminOrOwnerOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrOwnerOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
@@ -76,7 +76,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Comment."""
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrOwnerOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
