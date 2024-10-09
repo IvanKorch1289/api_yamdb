@@ -20,9 +20,7 @@ class TitleAdmin(admin.ModelAdmin):
         'category',
         'genres'
     )
-    search_fields = (
-        'name',
-    )
+    search_fields = ('name',)
 
     @admin.display(description='Произведение')
     def short_name(self, obj):
@@ -32,9 +30,7 @@ class TitleAdmin(admin.ModelAdmin):
 
     @admin.display(description='Жанры произведения')
     def genres(self, obj):
-        genres = get_object_or_404(
-            Title,
-            pk=obj.pk).genre.all()
+        genres = get_object_or_404(Title, pk=obj.pk).genre.all()
         return list(genres)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
@@ -49,9 +45,7 @@ class TitleAdmin(admin.ModelAdmin):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets
-    fieldsets[0][1]['fields'] = fieldsets[0][1]['fields'] + (
-        'role', 'bio',
-    )
+    fieldsets[0][1]['fields'] = fieldsets[0][1]['fields'] + ('role', 'bio',)
     list_display = ('username', 'email', 'role',)
 
 
@@ -64,9 +58,7 @@ class ReviewAdmin(admin.ModelAdmin):
         'title',
         'pub_date',
     )
-    search_fields = (
-        'text',
-    )
+    search_fields = ('text',)
 
     @admin.display(description='текст отзыва')
     def short_text(self, obj):
@@ -83,9 +75,7 @@ class CommentAdmin(admin.ModelAdmin):
         'review',
         'pub_date',
     )
-    search_fields = (
-        'text',
-    )
+    search_fields = ('text',)
 
     @admin.display(description='текст отзыва')
     def short_text(self, obj):
@@ -96,24 +86,14 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'slug',
-    )
-    search_fields = (
-        'name',
-    )
+    list_display = ('name', 'slug',)
+    search_fields = ('name',)
 
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'slug',
-    )
-    search_fields = (
-        'name',
-    )
+    list_display = ('name', 'slug',)
+    search_fields = ('name',)
 
 
 admin.site.unregister(Group)

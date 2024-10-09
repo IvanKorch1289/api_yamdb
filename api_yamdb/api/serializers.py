@@ -1,11 +1,11 @@
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
 from api.validators import username_validator
 from reviews.constants import (MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME,
                                NON_VALID_USERNAME)
 from reviews.models import Category, Comment, Genre, Review, Title
-
 
 User = get_user_model()
 
@@ -74,15 +74,11 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Запрещает повторный отзыв тем же пользователем."""
-        user = self.context['request'].user
-        title_id = (self.context
-                    .get('request')
-                    .parser_context.get('kwargs')
-                    .get('title_id'))
-        if Review.objects.filter(
-            author=user,
-            title=title_id
-        ).exists():
+        if not self.context.get('request').method == 'POST':
+            return data
+        author = self.context.get('request').user
+        title_id = self.context.get('view').kwargs.get('title_id')
+        if Review.objects.filter(author=author, title=title_id).exists():
             raise serializers.ValidationError(
                 'Отзыв уже оставлен'
             )
@@ -90,7 +86,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор объектов комментариев."""
+    """Сериализатор объекта комментариев."""
 
     author = serializers.SlugRelatedField(
         read_only=True,
@@ -103,7 +99,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели User."""
+    """Сериализатор объекта пользователя."""
 
     class Meta:
         model = User
@@ -127,7 +123,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор для метода регистрации."""
+    """Сериализатор метода регистрации."""
 
     username = serializers.CharField(
         max_length=MAX_LENGTH_USERNAME,
@@ -173,7 +169,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор для запроса токена."""
+    """Сериализатор метода запроса токена."""
 
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)

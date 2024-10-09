@@ -3,17 +3,18 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import (AllowAny,
-                                        IsAuthenticated,
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.filters import TitleFilterSet
-from api.mixins import CreateUpdateDestroyViewset
-from api.permissions import (IsAdminOrReadOnly, IsAdminOrOwnerOrReadOnly)
+from api.mixins import CreateDestroyViewset
+from api.permissions import (IsAdmin, IsAdminOrOwnerOrReadOnly,
+                             IsAdminOrReadOnly)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleGetSerializer,
@@ -21,18 +22,17 @@ from api.serializers import (CategorySerializer, CommentSerializer,
 from api.utils import get_user_and_send_mail
 from reviews.models import Category, Genre, Review, Title
 
-
 User = get_user_model()
 
 
-class CategoryViewSet(CreateUpdateDestroyViewset):
+class CategoryViewSet(CreateDestroyViewset):
     """Вьюсет для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(CreateUpdateDestroyViewset):
+class GenreViewSet(CreateDestroyViewset):
     """Вьюсет для модели Genre."""
 
     queryset = Genre.objects.all()
@@ -44,7 +44,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('name')
-    permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilterSet
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -98,7 +98,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели User."""
 
     queryset = User.objects.all()
-    permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (IsAdmin,)
     serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
