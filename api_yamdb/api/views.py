@@ -5,8 +5,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.permissions import (SAFE_METHODS, AllowAny,
+from rest_framework.permissions import (AllowAny,
                                         IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
@@ -29,13 +28,12 @@ User = get_user_model()
 class CreateUpdateDestroyViewset(
     viewsets.GenericViewSet,
     mixins.CreateModelMixin,
-    mixins.ListModelMixin, mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
     mixins.DestroyModelMixin
 ):
     """Базовый вьюсет без методов PATCH и GET по ID."""
 
-    def partial_update(self, request, *args, **kwargs):
-        raise MethodNotAllowed('PATCH')
+    pass
 
 
 class CategoryViewSet(CreateUpdateDestroyViewset):
@@ -56,13 +54,8 @@ class GenreViewSet(CreateUpdateDestroyViewset):
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', 'slug')
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
-
-    def get_permissions(self):
-        if self.request.method in SAFE_METHODS:
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -85,13 +78,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Review."""
 
     serializer_class = ReviewSerializer
-    permission_classes = (IsReviewOwnerOrReadOnly,)
+    permission_classes = (IsReviewOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -114,7 +102,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_review(self):
         return get_object_or_404(
             Review,
-            pk=self.kwargs.get('review_id')
+            pk=self.kwargs.get('review_id'),
+            title=self.kwargs.get('title_id')
         )
 
     def get_queryset(self):
