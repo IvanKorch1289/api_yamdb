@@ -95,11 +95,15 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == UserRoles.admin.name or self.is_superuser
+        return self.role == UserRoles.admin.name or self.is_superuser or self.is_admin or self.is_staff
 
     @property
     def is_moderator(self):
         return self.role == UserRoles.moderator.name
+
+    @property
+    def is_user(self):
+        return self.role == UserRoles.user.name
 
 
 class Category(NameModel, SlugModel):
