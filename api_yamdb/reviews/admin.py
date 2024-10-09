@@ -10,6 +10,21 @@ from reviews.constants import SHORT_TITLE
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
+class BaseAdminReviewsAndComments(admin.ModelAdmin):
+    search_fields = ('text',)
+
+    @admin.display(description='текст отзыва')
+    def short_text(self, obj):
+        if len(obj.text) <= SHORT_TITLE:
+            return f'{obj.text[:SHORT_TITLE]}...'
+        return obj.text
+
+
+class BaseAdminCategoriesAndGenres(admin.ModelAdmin):
+    list_display = ('name', 'slug',)
+    search_fields = ('name',)
+
+
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
     filter_horizontal = ('genre',)
@@ -50,7 +65,7 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
+class ReviewAdmin(BaseAdminReviewsAndComments):
     list_display = (
         'short_text',
         'author',
@@ -58,42 +73,26 @@ class ReviewAdmin(admin.ModelAdmin):
         'title',
         'pub_date',
     )
-    search_fields = ('text',)
-
-    @admin.display(description='текст отзыва')
-    def short_text(self, obj):
-        if len(obj.text) <= SHORT_TITLE:
-            return f'{obj.text[:SHORT_TITLE]}...'
-        return obj.text
 
 
 @admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
+class CommentAdmin(BaseAdminReviewsAndComments):
     list_display = (
         'short_text',
         'author',
         'review',
         'pub_date',
     )
-    search_fields = ('text',)
-
-    @admin.display(description='текст отзыва')
-    def short_text(self, obj):
-        if len(obj.text) <= SHORT_TITLE:
-            return f'{obj.text[:SHORT_TITLE]}...'
-        return obj.text
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug',)
-    search_fields = ('name',)
+class CategoryAdmin(BaseAdminCategoriesAndGenres):
+    pass
 
 
 @admin.register(Genre)
-class GenreAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug',)
-    search_fields = ('name',)
+class GenreAdmin(BaseAdminCategoriesAndGenres):
+    pass
 
 
 admin.site.unregister(Group)
