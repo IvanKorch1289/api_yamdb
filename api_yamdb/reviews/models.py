@@ -101,6 +101,10 @@ class User(AbstractUser):
     def is_moderator(self):
         return self.role == UserRoles.moderator.name
 
+    @property
+    def is_user(self):
+        return self.role == UserRoles.user.name
+
 
 class Category(NameModel, SlugModel):
 
