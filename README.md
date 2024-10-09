@@ -462,3 +462,9 @@ PATCH http://127.0.0.1:8000/api/v1/users/me/
   "bio": "string"
 }
 ```
+#### Проект разработали:
+
+* Корч И.И., teamlead - https://github.com/IvanKorch1289
+* Антонов Д.С. - https://github.com/Annttonov
+* Карпова Е.М. - https://github.com/karpova-el-m
+
