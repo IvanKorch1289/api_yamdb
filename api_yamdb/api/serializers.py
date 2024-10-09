@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from api.utils import get_user_and_send_mail
-from reviews.constants import NON_VALID_USERNAME
+from api.validators import username_validator
+from reviews.constants import (MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME,
+                               NON_VALID_USERNAME)
 from reviews.models import Category, Comment, Genre, Review, Title
 
 
@@ -135,6 +136,13 @@ class UserSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.ModelSerializer):
     """Сериализатор для метода регистрации."""
 
+    username = serializers.CharField(
+        max_length=MAX_LENGTH_USERNAME,
+        required=True,
+        validators=(username_validator,),
+    )
+    email = serializers.EmailField(max_length=MAX_LENGTH_EMAIL, required=True)
+
     class Meta:
         model = User
         fields = ('username', 'email')
@@ -146,10 +154,42 @@ class SignupSerializer(serializers.ModelSerializer):
         )
         return user
 
+    def validate(self, data):
+        user = User.objects.filter(
+            username=data.get('username'),
+            email=data.get('email')
+        )
+        if user.exists():
+            return data
+        if User.objects.filter(username=data.get('username')):
+            raise serializers.ValidationError(
+                'Пользователь с таким username уже существует'
+            )
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует'
+            )
+        return data
+
     def validate_username(self, value):
         if value == NON_VALID_USERNAME:
             raise serializers.ValidationError(
                 'Недопустимый username.'
+            )
+        if len(value) > MAX_LENGTH_USERNAME:
+            raise serializers.ValidationError(
+                'Длина поля username не должна превышать 150 символов.'
+            )
+        if value is None:
+            raise serializers.ValidationError(
+                {'username': ['Это поле не может быть пустым.']}
+            )
+        return value
+
+    def validate_email(self, value):
+        if len(value) > MAX_LENGTH_EMAIL or value is None:
+            raise serializers.ValidationError(
+                'Недопустимая длина email.'
             )
         return value
 
