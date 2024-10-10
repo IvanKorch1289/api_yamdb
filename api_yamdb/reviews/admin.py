@@ -74,6 +74,7 @@ class ReviewAdmin(BaseAdminReviewsAndComments):
         'pub_date',
     )
 
+
 @admin.register(Comment)
 class CommentAdmin(BaseAdminReviewsAndComments):
     list_display = (
@@ -82,7 +83,6 @@ class CommentAdmin(BaseAdminReviewsAndComments):
         'review',
         'pub_date',
     )
-
 
 
 @admin.register(Category)

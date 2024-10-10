@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 from reviews.models import (Comment, Category, Title, Review,
                             Genre,)
 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api_yamdb.settings')
 django.setup()
 
