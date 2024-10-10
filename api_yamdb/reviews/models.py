@@ -1,17 +1,15 @@
-from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import (MaxValueValidator, MinValueValidator,
-                                    RegexValidator)
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from reviews.constants import (MAX_FIELD_NAME, MAX_LENGTH_USERNAME, MAX_SCORE,
-                               MIN_SCORE, SHORT_TITLE, USER_NAME_REGEX)
+                               MIN_SCORE, SHORT_TITLE)
 from reviews.enums import UserRoles
+from reviews.validators import validate_max_date_title, validate_username
 
 
 class NameModel(models.Model):
-    """Абстактная модель для общего поля Наименования"""
+    """Абстактная модель для общего поля Наименования."""
     name = models.CharField(
         max_length=MAX_FIELD_NAME,
         help_text='Наименование',
@@ -28,7 +26,7 @@ class NameModel(models.Model):
 
 
 class SlugModel(models.Model):
-    """Абстактная модель для общего поля Слаг"""
+    """Абстактная модель для общего поля Слаг."""
 
     slug = models.SlugField(unique=True)
 
@@ -37,13 +35,18 @@ class SlugModel(models.Model):
 
 
 class TextAndDateModel(models.Model):
-    """Абстактная модель для общего поля Текст и Дата публикации"""
+    """Абстактная модель для общего поля Текст и Дата публикации."""
 
     text = models.TextField(verbose_name='текст отзыва')
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата публикации',
         db_index=True
+    )
+    author = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        verbose_name='автор',
     )
 
     class Meta:
@@ -58,15 +61,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True,)
     username = models.CharField(
         max_length=MAX_LENGTH_USERNAME,
-        validators=[
-            RegexValidator(
-                regex=USER_NAME_REGEX,
-                message=(
-                    'Можно использовать латинские буквы и символы ., @, +, -.'
-                ),
-                code="invalid_username",
-            ),
-        ],
+        validators=[validate_username],
         unique=True,
     )
     bio = models.TextField(blank=True, verbose_name='Биография')
@@ -96,12 +91,12 @@ class User(AbstractUser):
 
 class Category(NameModel, SlugModel):
 
-    class Meta:
+    class Meta(NameModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'slug'],
+                fields=['name'],
                 name='unique_category'
             )
         ]
@@ -109,12 +104,12 @@ class Category(NameModel, SlugModel):
 
 class Genre(NameModel, SlugModel):
 
-    class Meta:
+    class Meta(NameModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'slug'],
+                fields=['name'],
                 name='unique_genre'
             )
         ]
@@ -126,13 +121,10 @@ class Title(NameModel):
         verbose_name='год выпуска',
         validators=[
             MinValueValidator(
-                0,
-                message='Значение года не может быть отрицательным'
+                -2000,
+                message='Значение года раньше 2000 года до н.э.'
             ),
-            MaxValueValidator(
-                int(datetime.now().year),
-                message='Значение года не может быть больше текущего'
-            )
+            validate_max_date_title,
         ],
     )
     description = models.TextField(verbose_name='описание')
@@ -162,12 +154,6 @@ class Title(NameModel):
 
 class Review(TextAndDateModel):
 
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='reviews',
-        verbose_name='автор отзыва',
-    )
     score = models.PositiveSmallIntegerField(
         validators=[
             MinValueValidator(MIN_SCORE),
@@ -178,13 +164,13 @@ class Review(TextAndDateModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews',
         verbose_name='Произведение'
     )
 
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        default_related_name = 'reviews'
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
@@ -194,19 +180,14 @@ class Review(TextAndDateModel):
 
 
 class Comment(TextAndDateModel):
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name='автор комментария'
-    )
+
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Отзыв'
     )
 
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        default_related_name = 'comments'

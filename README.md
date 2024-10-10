@@ -69,6 +69,17 @@ python3 manage.py runserver
 
 ___
 
+### Как заполнить базу данных тестовыми данными:
+
+* Проверить наличик тестовыз данных в директории
+"_api_yamdb\static\data_"
+
+* Выполнить скрипт:
+~~~bash
+python3 api_yamdb/manage.py add_file_in_db
+~~~
+___
+
 ### Алгоритм регистрации пользователей.
 
 * Пользователь отправляет POST-запрос на добавление нового пользователя с параметрами email и username на эндпоинт /api/v1/auth/signup/.
@@ -462,3 +473,9 @@ PATCH http://127.0.0.1:8000/api/v1/users/me/
   "bio": "string"
 }
 ```
+#### Проект разработали:
+
+* Корч И.И., teamlead - https://github.com/IvanKorch1289
+* Антонов Д.С. - https://github.com/Annttonov
+* Карпова Е.М. - https://github.com/karpova-el-m
+
