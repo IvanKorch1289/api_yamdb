@@ -39,7 +39,7 @@ class TitleAdmin(admin.ModelAdmin):
 
     @admin.display(description='Произведение')
     def short_name(self, obj):
-        if len(obj.name) <= SHORT_TITLE:
+        if len(obj.name) > SHORT_TITLE:
             return f'{obj.name[:SHORT_TITLE]}...'
         return obj.name
 
@@ -74,7 +74,6 @@ class ReviewAdmin(BaseAdminReviewsAndComments):
         'pub_date',
     )
 
-
 @admin.register(Comment)
 class CommentAdmin(BaseAdminReviewsAndComments):
     list_display = (
@@ -83,6 +82,7 @@ class CommentAdmin(BaseAdminReviewsAndComments):
         'review',
         'pub_date',
     )
+
 
 
 @admin.register(Category)
