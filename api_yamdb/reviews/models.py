@@ -5,11 +5,13 @@ from django.db import models
 from reviews.constants import (MAX_FIELD_NAME, MAX_LENGTH_USERNAME, MAX_SCORE,
                                MIN_SCORE, SHORT_TITLE)
 from reviews.enums import UserRoles
-from reviews.validators import validate_max_date_title, validate_username
+from reviews.validators import validate_username
+from reviews.utils import get_current_year
 
 
 class NameModel(models.Model):
     """Абстактная модель для общего поля Наименования."""
+
     name = models.CharField(
         max_length=MAX_FIELD_NAME,
         help_text='Наименование',
@@ -84,22 +86,12 @@ class User(AbstractUser):
     def is_moderator(self):
         return self.role == UserRoles.moderator.name
 
-    @property
-    def is_user(self):
-        return self.role == UserRoles.user.name
-
 
 class Category(NameModel, SlugModel):
 
     class Meta(NameModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['name'],
-                name='unique_category'
-            )
-        ]
 
 
 class Genre(NameModel, SlugModel):
@@ -107,12 +99,6 @@ class Genre(NameModel, SlugModel):
     class Meta(NameModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['name'],
-                name='unique_genre'
-            )
-        ]
 
 
 class Title(NameModel):
@@ -120,11 +106,10 @@ class Title(NameModel):
     year = models.IntegerField(
         verbose_name='год выпуска',
         validators=[
-            MinValueValidator(
-                -2000,
-                message='Значение года раньше 2000 года до н.э.'
-            ),
-            validate_max_date_title,
+            MaxValueValidator(
+                get_current_year,
+                message='Значение не может превышать текущий год'
+            )
         ],
     )
     description = models.TextField(verbose_name='описание')
