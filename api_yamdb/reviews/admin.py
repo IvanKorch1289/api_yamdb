@@ -10,6 +10,12 @@ from reviews.constants import SHORT_TITLE
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
+def short_text_method(obj):
+    if len(obj.text) > SHORT_TITLE:
+        return f'{obj.text[:SHORT_TITLE]}...'
+    return obj.text
+
+
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
     filter_horizontal = ('genre',)
@@ -26,7 +32,7 @@ class TitleAdmin(admin.ModelAdmin):
 
     @admin.display(description='Произведение')
     def short_name(self, obj):
-        if len(obj.name) <= SHORT_TITLE:
+        if len(obj.name) > SHORT_TITLE:
             return f'{obj.name[:SHORT_TITLE]}...'
         return obj.name
 
@@ -70,9 +76,7 @@ class ReviewAdmin(admin.ModelAdmin):
 
     @admin.display(description='текст отзыва')
     def short_text(self, obj):
-        if len(obj.text) <= SHORT_TITLE:
-            return f'{obj.text[:SHORT_TITLE]}...'
-        return obj.text
+        return short_text_method(obj)
 
 
 @admin.register(Comment)
@@ -89,9 +93,7 @@ class CommentAdmin(admin.ModelAdmin):
 
     @admin.display(description='текст отзыва')
     def short_text(self, obj):
-        if len(obj.text) <= SHORT_TITLE:
-            return f'{obj.text[:SHORT_TITLE]}...'
-        return obj.text
+        return short_text_method(obj)
 
 
 @admin.register(Category)
