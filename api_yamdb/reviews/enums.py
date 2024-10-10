@@ -16,4 +16,4 @@ class UserRoles(Enum):
     @classmethod
     def max_length_field(cls):
         """Формирует максимальную длину поля для модели."""
-        return max(len(attribute.value)for attribute in cls)
+        return max(len(attribute.value) for attribute in cls)

@@ -3,19 +3,18 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, status, viewsets
+
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.permissions import (SAFE_METHODS, AllowAny,
-                                        IsAuthenticated,
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.filters import TitleFilterSet
-from api.permissions import (IsAdmin, IsAdminOrReadOnly,
-                             IsReviewOwnerOrReadOnly,
-                             IsSuperOrIsAdminOrIsModeratorOrIsAuthor)
+from api.mixins import CreateDestroyViewset
+from api.permissions import (IsAdmin, IsAdminOrOwnerOrReadOnly,
+                             IsAdminOrReadOnly)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              SignupSerializer, TitleGetSerializer,
@@ -26,43 +25,18 @@ from reviews.models import Category, Genre, Review, Title
 User = get_user_model()
 
 
-class CreateUpdateDestroyViewset(
-    viewsets.GenericViewSet,
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin, mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin
-):
-    """Базовый вьюсет без методов PATCH и GET по ID."""
-
-    def partial_update(self, request, *args, **kwargs):
-        raise MethodNotAllowed('PATCH')
-
-
-class CategoryViewSet(CreateUpdateDestroyViewset):
+class CategoryViewSet(CreateDestroyViewset):
     """Вьюсет для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name', 'slug')
-    lookup_field = 'slug'
 
 
-class GenreViewSet(CreateUpdateDestroyViewset):
+class GenreViewSet(CreateDestroyViewset):
     """Вьюсет для модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name', 'slug')
-    permission_classes = (IsAdmin,)
-    lookup_field = 'slug'
-
-    def get_permissions(self):
-        if self.request.method in SAFE_METHODS:
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -70,7 +44,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('name')
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilterSet
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -85,13 +59,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Review."""
 
     serializer_class = ReviewSerializer
-    permission_classes = (IsReviewOwnerOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrOwnerOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return (IsAuthenticatedOrReadOnly(),)
-        return super().get_permissions()
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -107,14 +76,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Comment."""
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsSuperOrIsAdminOrIsModeratorOrIsAuthor,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrOwnerOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
         return get_object_or_404(
             Review,
-            pk=self.kwargs.get('review_id')
+            pk=self.kwargs.get('review_id'),
+            title=self.kwargs.get('title_id')
         )
 
     def get_queryset(self):
@@ -129,7 +98,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели User."""
 
     queryset = User.objects.all()
-    permission_classes = (IsAdmin, )
+    permission_classes = (IsAdmin,)
     serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)

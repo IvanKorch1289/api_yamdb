@@ -12,4 +12,4 @@ MAX_SCORE = 10
 
 USER_NAME_REGEX = r'^[\w.@+-]+\Z'
 
-NON_VALID_USERNAME = 'me'
+NON_VALID_USERNAME = r'me'

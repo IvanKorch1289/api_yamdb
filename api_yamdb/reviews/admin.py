@@ -10,10 +10,19 @@ from reviews.constants import SHORT_TITLE
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
-def short_text_method(obj):
-    if len(obj.text) > SHORT_TITLE:
-        return f'{obj.text[:SHORT_TITLE]}...'
-    return obj.text
+class BaseAdminReviewsAndComments(admin.ModelAdmin):
+    search_fields = ('text',)
+
+    @admin.display(description='текст отзыва')
+    def short_text(self, obj):
+        if len(obj.text) <= SHORT_TITLE:
+            return f'{obj.text[:SHORT_TITLE]}...'
+        return obj.text
+
+
+class BaseAdminCategoriesAndGenres(admin.ModelAdmin):
+    list_display = ('name', 'slug',)
+    search_fields = ('name',)
 
 
 @admin.register(Title)
@@ -26,9 +35,7 @@ class TitleAdmin(admin.ModelAdmin):
         'category',
         'genres'
     )
-    search_fields = (
-        'name',
-    )
+    search_fields = ('name',)
 
     @admin.display(description='Произведение')
     def short_name(self, obj):
@@ -38,9 +45,7 @@ class TitleAdmin(admin.ModelAdmin):
 
     @admin.display(description='Жанры произведения')
     def genres(self, obj):
-        genres = get_object_or_404(
-            Title,
-            pk=obj.pk).genre.all()
+        genres = get_object_or_404(Title, pk=obj.pk).genre.all()
         return list(genres)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
@@ -55,14 +60,12 @@ class TitleAdmin(admin.ModelAdmin):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets
-    fieldsets[0][1]['fields'] = fieldsets[0][1]['fields'] + (
-        'role', 'bio',
-    )
+    fieldsets[0][1]['fields'] = fieldsets[0][1]['fields'] + ('role', 'bio',)
     list_display = ('username', 'email', 'role',)
 
 
 @admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
+class ReviewAdmin(BaseAdminReviewsAndComments):
     list_display = (
         'short_text',
         'author',
@@ -70,52 +73,26 @@ class ReviewAdmin(admin.ModelAdmin):
         'title',
         'pub_date',
     )
-    search_fields = (
-        'text',
-    )
-
-    @admin.display(description='текст отзыва')
-    def short_text(self, obj):
-        return short_text_method(obj)
-
 
 @admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
+class CommentAdmin(BaseAdminReviewsAndComments):
     list_display = (
         'short_text',
         'author',
         'review',
         'pub_date',
     )
-    search_fields = (
-        'text',
-    )
 
-    @admin.display(description='текст отзыва')
-    def short_text(self, obj):
-        return short_text_method(obj)
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'slug',
-    )
-    search_fields = (
-        'name',
-    )
+class CategoryAdmin(BaseAdminCategoriesAndGenres):
+    pass
 
 
 @admin.register(Genre)
-class GenreAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'slug',
-    )
-    search_fields = (
-        'name',
-    )
+class GenreAdmin(BaseAdminCategoriesAndGenres):
+    pass
 
 
 admin.site.unregister(Group)

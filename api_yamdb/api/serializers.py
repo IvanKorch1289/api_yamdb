@@ -1,11 +1,11 @@
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
 from api.validators import username_validator
 from reviews.constants import (MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME,
                                NON_VALID_USERNAME)
 from reviews.models import Category, Comment, Genre, Review, Title
-
 
 User = get_user_model()
 
@@ -15,7 +15,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
-        lookup_field = 'slug'
         model = Category
 
 
@@ -24,7 +23,6 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
-        lookup_field = 'slug'
         model = Genre
 
 
@@ -72,29 +70,23 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'author', 'text', 'score', 'pub_date')
-        read_only_fields = ('id', )
         model = Review
 
-    def create(self, validated_data):
+    def validate(self, data):
         """Запрещает повторный отзыв тем же пользователем."""
-
-        user = self.context['request'].user
-        title_id = (self.context
-                    .get('request')
-                    .parser_context.get('kwargs')
-                    .get('title_id'))
-        if Review.objects.filter(
-            author=user,
-            title=title_id
-        ).exists():
+        if not self.context.get('request').method == 'POST':
+            return data
+        author = self.context.get('request').user
+        title_id = self.context.get('view').kwargs.get('title_id')
+        if Review.objects.filter(author=author, title=title_id).exists():
             raise serializers.ValidationError(
                 'Отзыв уже оставлен'
             )
-        return super().create(validated_data)
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор объектов комментариев."""
+    """Сериализатор объекта комментариев."""
 
     author = serializers.SlugRelatedField(
         read_only=True,
@@ -103,12 +95,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'author', 'text', 'pub_date')
-        read_only_fields = ('id', )
         model = Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели User."""
+    """Сериализатор объекта пользователя."""
 
     class Meta:
         model = User
@@ -116,17 +107,15 @@ class UserSerializer(serializers.ModelSerializer):
                   'email', 'bio', 'role')
 
     def validate(self, data):
-        """Запрещает пользователям присваивать себе имя me
-        и использовать повторные username и email."""
         if data.get('username') == NON_VALID_USERNAME:
             raise serializers.ValidationError(
-                'Использовать имя me запрещено'
+                f'Использовать имя "{NON_VALID_USERNAME}" запрещено'
             )
-        if User.objects.filter(username=data.get('username')):
+        if User.objects.filter(username=data.get('username')).exists():
             raise serializers.ValidationError(
                 'Пользователь с таким username уже существует'
             )
-        if User.objects.filter(email=data.get('email')):
+        if User.objects.filter(email=data.get('email')).exists():
             raise serializers.ValidationError(
                 'Пользователь с таким email уже существует'
             )
@@ -134,7 +123,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор для метода регистрации."""
+    """Сериализатор метода регистрации."""
 
     username = serializers.CharField(
         max_length=MAX_LENGTH_USERNAME,
@@ -176,26 +165,11 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Недопустимый username.'
             )
-        if len(value) > MAX_LENGTH_USERNAME:
-            raise serializers.ValidationError(
-                'Длина поля username не должна превышать 150 символов.'
-            )
-        if value is None:
-            raise serializers.ValidationError(
-                {'username': ['Это поле не может быть пустым.']}
-            )
-        return value
-
-    def validate_email(self, value):
-        if len(value) > MAX_LENGTH_EMAIL or value is None:
-            raise serializers.ValidationError(
-                'Недопустимая длина email.'
-            )
         return value
 
 
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор для запроса токена."""
+    """Сериализатор метода запроса токена."""
 
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
