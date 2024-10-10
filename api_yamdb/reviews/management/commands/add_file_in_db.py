@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 
 from reviews.models import (Comment, Category, Title, Review,
                             Genre,)
-from reviews.constants import FILES
+from reviews.constants import FILES, PATH_TO_DATA
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api_yamdb.settings')
 django.setup()
@@ -28,7 +28,7 @@ def object_create(data, model, related_model: dict = None):
 
 
 def parse_file_and_create_models(file, model, related_model=None):
-    path = os.path.abspath(fr'api_yamdb\static\data\{file}')
+    path = os.path.abspath(fr'{PATH_TO_DATA}{file}')
     with open(file=path, mode='r', encoding='utf-8',) as f:
         reader = csv.DictReader(f)
         for data in reader:

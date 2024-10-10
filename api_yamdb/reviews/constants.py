@@ -14,6 +14,8 @@ USER_NAME_REGEX = r'^[\w.@+-]+\Z'
 
 NON_VALID_USERNAME = r'me'
 
+PATH_TO_DATA = 'api_yamdb/static/data/'
+
 FILES = {
     'users': 'users.csv',
     'category': "category.csv",
